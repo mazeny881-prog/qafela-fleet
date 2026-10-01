@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Companies & Segments - QAFELA Fleet System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh; width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px; color: white;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd; text-decoration: none;
+            display: flex; align-items: center;
+            padding: 10px 20px; font-size: 0.95rem; transition: 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white; background-color: #1b263b;
+        }
+        .main-content { margin-left: 240px; padding: 30px; }
+        .stat-card {
+            border: none; border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s; cursor: pointer;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar فرعي يظهر فيه شعار Qafela، زر Back، وCompanies و Users -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+            
+            <!-- زر الرجوع (Back) للوحة التحكم الرئيسية -->
+            <a href="/" class="text-warning mb-2">
+                <i class="bi bi-arrow-left-circle me-2 fs-5"></i> Back to Dashboard
+            </a>
+            
+            <hr class="border-secondary my-2">
+            
+            <a href="/companies" class="{% if request.path == '/companies' %}active{% endif %}">
+                <i class="bi bi-building me-2"></i> Companies
+            </a>
+            <a href="/users" class="{% if request.path == '/users' %}active{% endif %}">
+                <i class="bi bi-people-fill me-2"></i> Users & Roles
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h2 class="mb-4 fw-bold text-dark">Companies, Clients & Segments Management</h2>
+
+        <div class="row">
+            <!-- 1. إضافة شركة نقل رئيسية (Carrier) -->
+            <div class="col-md-4">
+                <div class="card stat-card bg-white p-3 mb-4">
+                    <h5 class="text-primary mb-3"><i class="bi bi-truck"></i> Add Transport Company</h5>
+                    <form action="/companies/add" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Transport Company Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Save Transport Company</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. إضافة شركة عميلة تابعة لشركة نقل (Client) -->
+            <div class="col-md-4">
+                <div class="card stat-card bg-white p-3 mb-4">
+                    <h5 class="text-success mb-3"><i class="bi bi-building-add"></i> Add Client Company</h5>
+                    <form action="/clients/add" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Select Transport Company</label>
+                            <select name="company_id" class="form-select" required>
+                                <option value="">-- Select Transport Company --</option>
+                                {% for c in transport_companies %}
+                                <option value="{{ c.id }}">{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Client Company Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Save Client Company</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. إضافة قسم (Segment) لشركة عميلة (مع فلترة تفاعلية لسهولة الاختيار) -->
+            <div class="col-md-4">
+                <div class="card stat-card bg-white p-3 mb-4">
+                    <h5 class="text-warning text-dark mb-3"><i class="bi bi-diagram-3"></i> Add Client Segment</h5>
+                    <form action="/segments/add" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Filter by Transport Company</label>
+                            <select id="filterTransport" class="form-select">
+                                <option value="">-- All Transport Companies --</option>
+                                {% for c in transport_companies %}
+                                <option value="{{ c.id }}">{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Client Company</label>
+                            <select name="client_id" id="clientSelect" class="form-select" required>
+                                <option value="">-- Select Client --</option>
+                                {% for c in client_companies %}
+                                <option value="{{ c.id }}" data-transport="{{ c.company_id }}">
+                                    {{ c.name }} (Carrier: {{ c.company.name if c.company else 'N/A' }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Segment Name</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">Save Segment</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- جدول العرض الهيكلي -->
+        <div class="card stat-card bg-white">
+            <div class="card-header bg-light fw-bold">Qafela Transport Companies & Their Clients Structure</div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Structure (Transport Company / Client / Segments)</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for carrier in transport_companies %}
+                            <tr class="table-secondary">
+                                <td class="ps-4 fw-bold text-dark">
+                                    <i class="bi bi-truck-flatbed me-2"></i> {{ carrier.name }} <span class="badge bg-dark ms-2">Transport Company</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <form action="/companies/delete/{{ carrier.id }}" method="POST" style="display:inline;" onsubmit="return confirm('حذف شركة النقل وكل عملائها؟')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i> Delete Carrier</button>
+                                    </form>
+                                </td>
+                            </tr>
+                                
+                            {% if carrier.clients %}
+                                {% for client in carrier.clients %}
+                                <tr>
+                                    <td class="ps-5">
+                                        <div class="fw-semibold text-secondary">
+                                            <i class="bi bi-arrow-return-right"></i> <i class="bi bi-building me-1"></i> {{ client.name }} <span class="badge bg-info text-dark">Client</span>
+                                        </div>
+                                        <div class="ms-4 mt-2">
+                                            {% if client.segments %}
+                                                {% for s in client.segments %}
+                                                <span class="badge bg-light text-dark border me-1 p-2">
+                                                    <i class="bi bi-diagram-2"></i> {{ s.name }}
+                                                    <form action="/segments/delete/{{ s.id }}" method="POST" style="display:inline;" onsubmit="return confirm('حذف القسم؟')">
+                                                        <button type="submit" class="btn btn-link text-danger p-0 ms-1" style="text-decoration:none;"><i class="bi bi-x-circle-fill"></i></button>
+                                                    </form>
+                                                </span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <small class="text-muted">No segments added yet.</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <form action="/clients/delete/{{ client.id }}" method="POST" style="display:inline;" onsubmit="return confirm('حذف هذا العميل؟')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i> Delete Client</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="2" class="ps-5 text-muted fst-italic">No client companies added under {{ carrier.name }} yet.</td>
+                                </tr>
+                            {% endif %}
+                        {% else %}
+                        <tr>
+                            <td colspan="2" class="text-center py-4 text-muted">No companies found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- كود JavaScript للفلترة الديناميكية لقائمة العملاء عند اختيار شركة النقل في قسم الـ Segments -->
+    <script>
+        const filterTransport = document.getElementById('filterTransport');
+        const clientSelect = document.getElementById('clientSelect');
+        const allClientOptions = Array.from(clientSelect.options).slice(1);
+
+        filterTransport.addEventListener('change', function() {
+            const selectedTransportId = this.value;
+            
+            clientSelect.innerHTML = '<option value="">-- Select Client --</option>';
+
+            allClientOptions.forEach(option => {
+                const transportId = option.getAttribute('data-transport');
+                if (!selectedTransportId || transportId === selectedTransportId) {
+                    clientSelect.appendChild(option);
+                }
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

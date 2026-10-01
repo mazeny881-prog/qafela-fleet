@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journey Maintenance Logs - QAFELA Fleet System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 1000;
+        }
+        .sidebar-menu {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1b263b;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); background: #ffffff; }
+        .table th { background-color: #1b263b; color: white; font-weight: 500; white-space: nowrap; }
+        .table th a { color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .table th a:hover { color: #adb5bd; }
+        .filter-section { background: #ffffff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+           
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="bi bi-tools text-primary me-2"></i> Journey Maintenance & Breakdowns</h2>
+                    <p class="text-muted mb-0">Advanced logs management with comprehensive filtering and reporting.</p>
+                </div>
+                <div>
+                    <a href="/maintenance-logs/export?{{ dict(request.query_params) | urlencode }}" class="btn btn-success shadow-sm px-4">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Alert Notification -->
+            {% if error_message %}
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error_message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <!-- Filter & Search Panel -->
+            <div class="filter-section">
+                <form method="GET" action="/maintenance-logs" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Vehicle Plate Search</label>
+                        <input type="text" name="search_plate" class="form-control form-control-sm" value="{{ request.query_params.get('search_plate', '') }}" placeholder="Enter plate number...">
+                    </div>
+                    
+                    <!-- Driver Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Driver Filter</label>
+                        <select name="driver_id" class="form-select form-select-sm">
+                            <option value="">All Drivers</option>
+                            {% for drv in available_drivers %}
+                            <option value="{{ drv.id }}" {% if selected_driver_id|string == drv.id|string %}selected{% endif %}>{{ drv.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Segment Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Segment Filter</label>
+                        <select name="segment_id" class="form-select form-select-sm">
+                            <option value="">All Segments</option>
+                            {% for seg in available_segments %}
+                            <option value="{{ seg.id }}" {% if selected_segment_id|string == seg.id|string %}selected{% endif %}>{{ seg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Type</label>
+                        <select name="m_type" class="form-select form-select-sm">
+                            <option value="">All Types</option>
+                            <option value="Maintenance" {% if request.query_params.get('m_type') == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                            <option value="Breakdown" {% if request.query_params.get('m_type') == 'Breakdown' %}selected{% endif %}>Breakdown</option>
+                        </select>
+                    </div>
+                   
+                    <!-- Description Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Description Filter</label>
+                        <select name="description" class="form-select form-select-sm">
+                            <option value="">All Descriptions</option>
+                            {% for desc in available_descriptions %}
+                            <option value="{{ desc }}" {% if request.query_params.get('description') == desc %}selected{% endif %}>{{ desc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Location Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Location Filter</label>
+                        <select name="location" class="form-select form-select-sm">
+                            <option value="">All Locations</option>
+                            <option value="N/A" {% if request.query_params.get('location') == 'N/A' %}selected{% endif %}>N/A</option>
+                            {% for loc in available_locations %}
+                            <option value="{{ loc }}" {% if request.query_params.get('location') == loc %}selected{% endif %}>{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Status Filter</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">All Statuses</option>
+                            <option value="Completed" {% if request.query_params.get('status') == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="Ongoing" {% if request.query_params.get('status') == 'Ongoing' %}selected{% endif %}>Ongoing</option>
+                        </select>
+                    </div>
+
+                    <!-- Start Time Range -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Start Time From</label>
+                        <input type="datetime-local" name="start_from" class="form-control form-control-sm" value="{{ request.query_params.get('start_from', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">Start Time To</label>
+                        <input type="datetime-local" name="start_to" class="form-control form-control-sm" value="{{ request.query_params.get('start_to', '') }}">
+                    </div>
+
+                    <!-- End Time Range -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">End Time From</label>
+                        <input type="datetime-local" name="end_from" class="form-control form-control-sm" value="{{ request.query_params.get('end_from', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small">End Time To</label>
+                        <input type="datetime-local" name="end_to" class="form-control form-control-sm" value="{{ request.query_params.get('end_to', '') }}">
+                    </div>
+
+                    <div class="col-12 text-end mt-2">
+                        <a href="/maintenance-logs" class="btn btn-secondary btn-sm me-2"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
+                        <button type="submit" class="btn btn-primary btn-sm px-4"><i class="bi bi-search"></i> Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Summary Cards / Total Duration Banner -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="card p-3 border-0 shadow-sm bg-white rounded-3">
+                        <span class="text-muted small">Total Records Found</span>
+                        <h4 class="fw-bold mb-0 text-dark">{{ total_records }}</h4>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 border-0 shadow-sm bg-primary text-white rounded-3">
+                        <span class="small opacity-75">Total Duration</span>
+                        <h4 class="fw-bold mb-0">{{ total_duration }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Card -->
+            <div class="card card-custom">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        {% set current_order = request.query_params.get('order', 'desc') %}
+                        {% set next_order = 'asc' if current_order == 'desc' else 'desc' %}
+                       
+                        {% macro sort_url(col_name) %}
+                            {% set q_dict = dict(request.query_params) %}
+                            {% set _ = q_dict.update({'sort_by': col_name, 'order': next_order}) %}
+                            /maintenance-logs?{{ q_dict | urlencode }}
+                        {% endmacro %}
+
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th><a href="{{ sort_url('serial') }}">Journey Serial <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('plate') }}">Vehicle Plate <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('driver') }}">Driver <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('segment') }}">Segment <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('type') }}">Type <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('description') }}">Description <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('location') }}">Location <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('start_time') }}">Start Time <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('end_time') }}">End Time <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th><a href="{{ sort_url('duration') }}">Duration <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th>Status</th>
+                                    <th><a href="{{ sort_url('recorded_by') }}">Recorded By <i class="bi bi-arrow-down-up small text-warning"></i></a></th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <a href="/journeys/ticket/{{ log.journey_id }}" class="fw-bold text-decoration-none">
+                                            {{ log.journey.serial if log.journey and log.journey.serial else '#' ~ log.journey_id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ log.journey.vehicle.plate_number if log.journey and log.journey.vehicle else 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if log.journey and log.journey.driver %}
+                                            {{ log.journey.driver.name }}
+                                        {% elif log.journey and log.journey.driver_name %}
+                                            {{ log.journey.driver_name }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.journey and log.journey.segment %}
+                                            {% if log.journey.segment.name is defined and log.journey.segment.name %}
+                                                {{ log.journey.segment.name }}
+                                            {% else %}
+                                                {{ log.journey.segment }}
+                                            {% endif %}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if log.maintenance_type == 'Breakdown' %}bg-danger{% else %}bg-info text-dark{% endif %}">
+                                            {{ log.maintenance_type }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.description }}</td>
+                                    <td>{{ log.location or 'N/A' }}</td>
+                                    <td>{{ log.start_time.strftime('%Y-%m-%d %H:%M') if log.start_time else 'N/A' }}</td>
+                                    <td>{{ log.end_time.strftime('%Y-%m-%d %H:%M') if log.end_time else 'N/A' }}</td>
+                                    <td class="fw-bold text-primary">
+                                        {% if log.duration_hours and log.duration_hours > 0 %}
+                                            {% set total_mins = (log.duration_hours * 60) | int %}
+                                            {% set h = total_mins // 60 %}
+                                            {% set m = total_mins % 60 %}
+                                            {{ '%02d:%02d' | format(h, m) }}
+                                        {% else %}
+                                            00:00
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ log.status_badge }}">
+                                            {{ log.status_text }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.recorded_by or 'N/A' }}</td>
+                                    <td class="text-center">
+                                        <a href="/journeys/ticket/{{ log.journey_id }}" class="btn btn-sm btn-outline-primary shadow-sm" title="View Ticket">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="14" class="text-center text-muted py-5">
+                                        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                        No maintenance records found matching your criteria.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

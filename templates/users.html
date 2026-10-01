@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Users & Permissions - QAFELA Fleet System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 100vh; width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px; color: white;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd; text-decoration: none;
+            display: flex; align-items: center;
+            padding: 10px 20px; font-size: 0.95rem; transition: 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white; background-color: #1b263b;
+        }
+        .main-content { margin-left: 240px; padding: 30px; }
+        .stat-card {
+            border: none; border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s; cursor: pointer;
+        }
+        .stat-card:hover { transform: translateY(-3px); }
+        
+        /* إلغاء أي قيود على الجدول وخلاياه لمنع ظهور شريط السحب وتداخل العناصر */
+        .table-responsive, .table, .table td, .table th {
+            overflow: visible !important;
+        }
+
+        /* جعل القائمة المنسدلة تطفو بحرية تامة خارج الجدول والشاشة */
+        .dropdown-menu {
+            position: fixed !important;
+            z-index: 99999 !important;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        /* تنسيقات المودال وصناديق الاختيار */
+        .modal-body { padding: 1.5rem; }
+        .checkbox-list-box {
+            max-height: 170px; overflow-y: auto; border: 1px solid #dee2e6;
+            border-radius: 0.5rem; padding: 12px; background-color: #fdfdfe;
+        }
+        .select-all-box {
+            background-color: #f1f3f5; border: 1px solid #ced4da;
+            border-radius: 0.5rem; padding: 10px 14px; display: flex; align-items: center;
+        }
+        .select-all-box .form-check-input {
+            margin-top: 0; cursor: pointer; width: 1.2em; height: 1.2em;
+        }
+        .select-all-box .form-check-label {
+            cursor: pointer; margin-left: 8px; font-weight: 600; color: #212529;
+        }
+        .modal-content { border-radius: 0.75rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar المحدث بالشكل المطلوب -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+            
+            <!-- زر الرجوع (Back) للوحة التحكم الرئيسية -->
+            <a href="/" class="text-warning mb-2">
+                <i class="bi bi-arrow-left-circle me-2 fs-5"></i> Back to Dashboard
+            </a>
+            
+            <hr class="border-secondary my-2">
+            
+            <a href="/companies" class="{% if request.path == '/companies' %}active{% endif %}">
+                <i class="bi bi-building me-2"></i> Companies
+            </a>
+            <a href="/users" class="{% if request.path == '/users' %}active{% endif %}">
+                <i class="bi bi-people-fill me-2"></i> Users & Roles
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Users & Permissions Management</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="bi bi-person-plus"></i> Add New User
+            </button>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="card stat-card bg-white mb-4">
+            <div class="card-body">
+                <form action="/users" method="get" id="filterForm" class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" name="q" class="form-control" placeholder="Search by User Name or Email..." value="{{ search_query }}">
+                    </div>
+                    <div class="col-md-4">
+                        <select name="filter_transport_id" id="mainTransportFilter" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Transport Companies</option>
+                            {% for comp in transport_companies %}
+                                <option value="{{ comp.id }}" {% if selected_transport_filter == comp.id|string %}selected{% endif %}>{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="filter_client_id" id="mainClientFilter" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Client Companies</option>
+                            {% for client in client_companies %}
+                                {% set t_id = client.transport_company_id or client.transport_id or client.company_id or (client.transport.id if client.transport else '') %}
+                                <option value="{{ client.id }}" data-transport-id="{{ t_id }}" {% if selected_client_filter == client.id|string %}selected{% endif %}>
+                                    {{ client.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card stat-card bg-white">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">ID</th>
+                                <th>User Name</th>
+                                <th>Email</th>
+                                <th>Transport Companies</th>
+                                <th>Client Companies</th>
+                                <th>Role</th>
+                                <th>Permissions / Access</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td class="ps-4 fw-bold">#{{ u.id }}</td>
+                                <td>
+                                    {{ u.username }} 
+                                    {% if u.role == 'Developer' or u.username == 'Mazen Yasser' %}
+                                        <span class="badge bg-warning text-dark ms-1">Developer</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ u.email }}</td>
+                                
+                                <!-- Transport Companies Column -->
+                                <td>
+                                    {% set all_trans_count = transport_companies | length %}
+                                    {% set user_trans_count = u.companies | length if u.companies else (1 if u.company_id else 0) %}
+                                    
+                                    {% if u.role == 'Developer' or u.username == 'Mazen Yasser' or (all_trans_count > 0 and user_trans_count == all_trans_count) %}
+                                        <span class="badge bg-dark text-info"><i class="bi bi-globe"></i> Full Access</span>
+                                    {% elif u.companies %}
+                                        {% for comp in u.companies[:2] %}
+                                            <span class="badge bg-primary text-white me-1">{{ comp.name }}</span>
+                                        {% endfor %}
+                                        {% if u.companies | length > 2 %}
+                                            <div class="dropdown d-inline-block">
+                                                <button class="badge bg-secondary text-white border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" style="cursor: pointer;">
+                                                    +{{ u.companies | length - 2 }} more
+                                                </button>
+                                                <ul class="dropdown-menu p-2 shadow-sm" style="font-size: 0.85rem; min-width: 150px;">
+                                                    <h6 class="dropdown-header text-primary p-0 mb-1 fw-bold">All Transport:</h6>
+                                                    {% for c in u.companies %}
+                                                        <li><span class="dropdown-item-text py-0 text-dark">• {{ c.name }}</span></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% elif u.company %}
+                                        <span class="badge bg-primary text-white">{{ u.company.name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- Client Companies Column -->
+                                <td>
+                                    {% set all_client_count = client_companies | length %}
+                                    {% set user_client_count = u.clients | length if u.clients else (1 if u.client_id else 0) %}
+
+                                    {% if u.role == 'Developer' or u.username == 'Mazen Yasser' or (all_client_count > 0 and user_client_count == all_client_count) %}
+                                        <span class="badge bg-dark text-success"><i class="bi bi-globe"></i> Full Access</span>
+                                    {% elif u.clients %}
+                                        {% for client in u.clients[:2] %}
+                                            <span class="badge bg-success text-white me-1">{{ client.name }}</span>
+                                        {% endfor %}
+                                        {% if u.clients | length > 2 %}
+                                            <div class="dropdown d-inline-block">
+                                                <button class="badge bg-secondary text-white border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" style="cursor: pointer;">
+                                                    +{{ u.clients | length - 2 }} more
+                                                </button>
+                                                <ul class="dropdown-menu p-2 shadow-sm" style="font-size: 0.85rem; min-width: 150px;">
+                                                    <h6 class="dropdown-header text-success p-0 mb-1 fw-bold">All Clients:</h6>
+                                                    {% for cl in u.clients %}
+                                                        <li><span class="dropdown-item-text py-0 text-dark">• {{ cl.name }}</span></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% elif u.client %}
+                                        <span class="badge bg-success text-white">{{ u.client.name }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if u.role == 'Developer' or u.username == 'Mazen Yasser' %}
+                                        <span class="badge bg-dark text-warning">Developer (Full Control)</span>
+                                    {% elif u.role and u.role.lower() == 'admin' %}
+                                        <span class="badge bg-danger">Admin (Full Access)</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Operations</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if u.role == 'Developer' or u.username == 'Mazen Yasser' %}
+                                        <span class="text-warning fw-bold">System Master Access</span>
+                                    {% elif u.role and u.role.lower() == 'admin' %}
+                                        <span class="text-success fw-bold">Admin Access</span>
+                                    {% else %}
+                                        <span class="text-primary fw-bold">Operations Access</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-warning me-1" data-bs-toggle="modal" data-bs-target="#editUserModal{{ u.id }}">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                    {% if not (u.role == 'Developer' or u.username == 'Mazen Yasser') %}
+                                        <form action="/users/delete/{{ u.id }}" method="post" class="d-inline delete-user-form">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Edit Users) -->
+    {% for u in users %}
+    <div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form class="edit-user-form" data-id="{{ u.id }}">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title"><i class="bi bi-person-gear me-1"></i> Edit User: {{ u.username }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">User Name</label>
+                            <input type="text" name="username" class="form-control" value="{{ u.username }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ u.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Password</label>
+                            <input type="text" name="password" class="form-control" value="{{ u.password }}">
+                            <small class="text-muted">Leave blank if you do not want to change the password</small>
+                        </div>
+
+                        <!-- Select All Option -->
+                        <div class="mb-3">
+                            <div class="select-all-box">
+                                <input class="form-check-input select-all-checkbox" type="checkbox" id="edit_select_all_{{ u.id }}" data-form-type="edit" data-id="{{ u.id }}">
+                                <label class="form-check-label" for="edit_select_all_{{ u.id }}">
+                                    🌐 All Companies & Clients (Full Access)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Transport Companies Checkboxes -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-primary mb-2">Transport Companies</label>
+                            <div class="checkbox-list-box transport-container">
+                                {% for comp in transport_companies %}
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input transport-checkbox edit-t-cb-{{ u.id }}" type="checkbox" name="company_ids" value="{{ comp.id }}" id="edit_comp_{{ u.id }}_{{ comp.id }}"
+                                            {% if (u.companies and comp in u.companies) or (u.company_id == comp.id) %}checked{% endif %}>
+                                        <label class="form-check-label" for="edit_comp_{{ u.id }}_{{ comp.id }}">
+                                            {{ comp.name }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Client Companies Checkboxes -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-success mb-2">Client Companies <span class="text-muted fw-normal fs-6">(Filtered by selected Transport)</span></label>
+                            <div class="checkbox-list-box client-container">
+                                {% for client in client_companies %}
+                                    {% set t_id = client.transport_company_id or client.transport_id or client.company_id or (client.transport.id if client.transport else '') %}
+                                    <div class="form-check client-item mb-1" data-transport-id="{{ t_id }}">
+                                        <input class="form-check-input client-checkbox edit-c-cb-{{ u.id }}" type="checkbox" name="client_ids" value="{{ client.id }}" id="edit_client_{{ u.id }}_{{ client.id }}"
+                                            {% if (u.clients and client in u.clients) or (u.client_id == client.id) %}checked{% endif %}>
+                                        <label class="form-check-label" for="edit_client_{{ u.id }}_{{ client.id }}">
+                                            {{ client.name }} 
+                                            <span class="badge bg-secondary text-light ms-1">
+                                                {% for comp in transport_companies %}{% if comp.id|string == t_id|string %}{{ comp.name }}{% endif %}{% endfor %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">Role</label>
+                            {% if u.role == 'Developer' or u.username == 'Mazen Yasser' %}
+                                <select class="form-select bg-light" disabled>
+                                    <option value="Developer" selected>Developer (Full Control) - Locked</option>
+                                </select>
+                                <input type="hidden" name="role" value="Developer">
+                            {% else %}
+                                <select name="role" class="form-select" required>
+                                    <option value="Admin" {% if u.role and u.role.lower() == 'admin' %}selected{% endif %}>Admin (Full Access)</option>
+                                    <option value="Operations" {% if u.role and u.role.lower() == 'operations' %}selected{% endif %}>Operations</option>
+                                    <option value="Developer">Developer (Full Control)</option>
+                                </select>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="/users/add" method="post">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title"><i class="bi bi-person-plus me-1"></i> Add New User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-start">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">User Name</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Password</label>
+                            <input type="text" name="password" class="form-control" required>
+                        </div>
+
+                        <!-- Select All Option -->
+                        <div class="mb-3">
+                            <div class="select-all-box">
+                                <input class="form-check-input select-all-checkbox" type="checkbox" id="add_select_all" data-form-type="add">
+                                <label class="form-check-label" for="add_select_all">
+                                    🌐 All Companies & Clients (Full Access)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Transport Companies Checkboxes -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-primary mb-2">Transport Companies</label>
+                            <div class="checkbox-list-box transport-container">
+                                {% for comp in transport_companies %}
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input transport-checkbox add-t-cb" type="checkbox" name="company_ids" value="{{ comp.id }}" id="add_comp_{{ comp.id }}">
+                                        <label class="form-check-label" for="add_comp_{{ comp.id }}">{{ comp.name }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <!-- Client Companies Checkboxes -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-success mb-2">Client Companies <span class="text-muted fw-normal fs-6">(Filtered by selected Transport)</span></label>
+                            <div class="checkbox-list-box client-container">
+                                {% for client in client_companies %}
+                                    {% set t_id = client.transport_company_id or client.transport_id or client.company_id or (client.transport.id if client.transport else '') %}
+                                    <div class="form-check client-item mb-1" data-transport-id="{{ t_id }}">
+                                        <input class="form-check-input client-checkbox add-c-cb" type="checkbox" name="client_ids" value="{{ client.id }}" id="add_client_{{ client.id }}">
+                                        <label class="form-check-label" for="add_client_{{ client.id }}">
+                                            {{ client.name }} 
+                                            <span class="badge bg-secondary text-light ms-1">
+                                                {% for comp in transport_companies %}{% if comp.id|string == t_id|string %}{{ comp.name }}{% endif %}{% endfor %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">Role</label>
+                            <select name="role" class="form-select" required>
+                                <option value="Operations">Operations</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Developer">Developer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // 1. فلترة قائمة العملاء في الفلتر العلوي ديناميكياً عند اختيار شركة النقل
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainTransportSelect = document.getElementById('mainTransportFilter');
+            const mainClientSelect = document.getElementById('mainClientFilter');
+
+            if (mainTransportSelect && mainClientSelect) {
+                const allClientOptions = Array.from(mainClientSelect.querySelectorAll('option')).slice(1);
+
+                function filterMainClients() {
+                    const selectedTransportId = mainTransportSelect.value;
+                    mainClientSelect.innerHTML = '<option value="">All Client Companies</option>';
+
+                    allClientOptions.forEach(opt => {
+                        const clientTransportId = opt.getAttribute('data-transport-id');
+                        if (!selectedTransportId || clientTransportId === "" || clientTransportId === selectedTransportId) {
+                            mainClientSelect.appendChild(opt);
+                        }
+                    });
+                }
+
+                if (mainTransportSelect.value) {
+                    const currentClientVal = "{{ selected_client_filter }}";
+                    filterMainClients();
+                    if (currentClientVal) mainClientSelect.value = currentClientVal;
+                }
+            }
+        });
+
+        // 2. تفعيل الفلترة الديناميكية وتحديد الكل داخل المودالات (Add & Edit)
+        document.querySelectorAll('.modal').forEach(modalEl => {
+            const transportCheckboxes = modalEl.querySelectorAll('.transport-checkbox');
+            const clientCheckboxes = modalEl.querySelectorAll('.client-checkbox');
+            const clientItems = modalEl.querySelectorAll('.client-item');
+            const selectAllCb = modalEl.querySelector('.select-all-checkbox');
+
+            function filterClients() {
+                const selectedTransportIds = Array.from(transportCheckboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => String(cb.value));
+
+                clientItems.forEach(item => {
+                    const clientTransportId = String(item.getAttribute('data-transport-id') || "").trim();
+                    
+                    if (selectedTransportIds.length === 0 || clientTransportId === "" || selectedTransportIds.includes(clientTransportId)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                        const checkbox = item.querySelector('.client-checkbox');
+                        if (checkbox) checkbox.checked = false;
+                    }
+                });
+            }
+
+            transportCheckboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    filterClients();
+                    updateSelectAllState();
+                });
+            });
+
+            clientCheckboxes.forEach(cb => {
+                cb.addEventListener('change', updateSelectAllState);
+            });
+
+            if (selectAllCb) {
+                selectAllCb.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    transportCheckboxes.forEach(cb => { cb.checked = isChecked; cb.dispatchEvent(new Event('change')); });
+                    clientCheckboxes.forEach(cb => {
+                        const parentItem = cb.closest('.client-item');
+                        if (!parentItem || parentItem.style.display !== 'none') {
+                            cb.checked = isChecked;
+                        }
+                    });
+                });
+            }
+
+            function updateSelectAllState() {
+                if (!selectAllCb) return;
+                const allTransportsChecked = Array.from(transportCheckboxes).every(cb => cb.checked);
+                const visibleClients = Array.from(clientCheckboxes).filter(cb => {
+                    const parent = cb.closest('.client-item');
+                    return !parent || parent.style.display !== 'none';
+                });
+                const allVisibleClientsChecked = visibleClients.length > 0 && visibleClients.every(cb => cb.checked);
+                selectAllCb.checked = allTransportsChecked && allVisibleClientsChecked;
+            }
+
+            modalEl.addEventListener('shown.bs.modal', () => {
+                filterClients();
+                updateSelectAllState();
+            });
+        });
+
+        // 3. إرسال تعديلات المستخدم عبر AJAX ومعالجة الاستجابة
+        document.querySelectorAll('.edit-user-form').forEach(form => {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const userId = this.getAttribute('data-id');
+                const formData = new FormData(this);
+                const urlencoded = new URLSearchParams();
+                
+                for (let [key, value] of formData.entries()) {
+                    urlencoded.append(key, value);
+                }
+
+                try {
+                    const response = await fetch(`/users/update/${userId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: urlencoded.toString()
+                    });
+
+                    const modalEl = document.getElementById(`editUserModal${userId}`);
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: 'User updated successfully.',
+                            timer: 1200,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        const result = await response.text();
+                        Swal.fire({ icon: 'error', title: 'Error', text: result });
+                    }
+                } catch (err) {
+                    Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not connect to server.' });
+                }
+            });
+        });
+
+        // 4. تأكيد الحذف
+        document.querySelectorAll('.delete-user-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) this.submit();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

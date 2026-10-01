@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Journey Map Tracking - {{ journey.serial or journey.id }}</title>
+    <!-- Bootstrap 5 & FontAwesome & Google Fonts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Cairo', sans-serif; }
+        .main-content { padding: 30px; width: 100%; }
+        .card-stat { border: none; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.05); background: #ffffff; }
+        #map { height: 65vh; width: 100%; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+        .control-panel { background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); padding: 20px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e9ecef; }
+        .badge-custom { padding: 6px 12px; border-radius: 30px; font-weight: 600; }
+        .timeline-box { max-height: 220px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+            
+            <div class="card card-stat mb-4">
+                <div class="card-body d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <h3 class="mb-0 fw-bold text-dark"><i class="fas fa-satellite-dish text-primary me-2"></i> Journey Tracking: <span class="text-secondary">#{{ journey.serial or journey.id }}</span></h3>
+                        <p class="text-muted small mb-0 mt-1">Live tracking .</p>
+                    </div>
+                    <div>
+                        <a href="/journeys/ticket/{{ journey.id }}" class="btn btn-outline-dark btn-sm shadow-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Back to Ticket
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="control-panel row align-items-center text-center">
+                <div class="col-md-3 mb-2 mb-md-0 border-end">
+                    <span class="text-muted small d-block">Departure Time</span>
+                    <strong class="text-dark" id="departureDisplay">{{ departure_time }}</strong>
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0 border-end">
+                    <span class="text-muted small d-block">Est. Duration</span>
+                    <strong class="text-info"><span id="durationVal">00:00</span></strong>
+                </div>
+                <div class="col-md-3 mb-2 mb-md-0 border-end">
+                    <span class="text-muted small d-block">Current Progress</span>
+                    <strong class="text-success" id="progressPercentDisplay">0%</strong>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small d-block">Journey Status</span>
+                    <span class="badge badge-custom bg-primary fs-6" id="statusVal">Calculating...</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-9 mb-4 mb-lg-0">
+                    <div id="map"></div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="card card-stat h-100 p-3">
+                        <!-- Follow-ups -->
+                        <h6 class="fw-bold text-dark mb-2"><i class="fas fa-clipboard-list text-primary me-2"></i> Follow-ups</h6>
+                        <div class="timeline-box pe-2 mb-3">
+                            {% if followups_data %}
+                                {% for f in followups_data %}
+                                    <div class="p-2 mb-2 bg-light rounded border-start border-primary border-3">
+                                        <div class="small fw-bold text-dark">{{ f.employee_name }}</div>
+                                        <div class="text-muted small">{{ f.comment }}</div>
+                                        <div class="text-end text-secondary" style="font-size: 0.70rem;">{{ f.created_at }}</div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted small py-2">No follow-ups recorded.</div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-2">
+
+                        <!-- Journey Stops -->
+                        <h6 class="fw-bold text-dark mb-2"><i class="fas fa-stop-circle text-warning me-2"></i> Suspended Stops</h6>
+                        <div class="timeline-box pe-2 mb-3">
+                            {% if stops_data %}
+                                {% for s in stops_data %}
+                                    <div class="p-2 mb-2 bg-light rounded border-start {{ 'border-warning' if s.is_active else 'border-secondary' }} border-3 stop-item-data" 
+                                         data-lat="{{ s.latitude or '' }}"
+                                         data-lng="{{ s.longitude or '' }}"
+                                         data-start-time="{{ s.start_time }}" 
+                                         data-end-time="{{ s.end_time or '' }}"
+                                         data-is-active="{{ 'true' if s.is_active else 'false' }}">
+                                        <div class="small fw-bold text-dark">{{ s.reason or 'Stop' }}</div>
+                                        <div class="text-muted small">Location: {{ s.location or 'N/A' }}</div>
+                                        <div class="d-flex justify-content-between text-secondary" style="font-size: 0.70rem;">
+                                            <span>Start: {{ s.start_time }}</span>
+                                            <span class="{{ 'text-danger fw-bold' if s.is_active else '' }}">{{ 'Active' if s.is_active else 'End: ' ~ (s.end_time or 'N/A') }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted small py-2">No stops registered.</div>
+                            {% endif %}
+                        </div>
+
+                        <hr class="my-2">
+
+                        <!-- Journey Maintenance Logs -->
+                        <h6 class="fw-bold text-dark mb-2"><i class="fas fa-tools text-danger me-2"></i> Maintenance Logs</h6>
+                        <div class="timeline-box pe-2">
+                            {% if maintenances_data %}
+                                {% for m in maintenances_data %}
+                                    <div class="p-2 mb-2 bg-light rounded border-start {{ 'border-danger' if m.is_active else 'border-secondary' }} border-3 maint-item-data"
+                                         data-lat="{{ m.latitude or '' }}"
+                                         data-lng="{{ m.longitude or '' }}"
+                                         data-start-time="{{ m.start_time }}" 
+                                         data-end-time="{{ m.end_time or '' }}"
+                                         data-is-active="{{ 'true' if m.is_active else 'false' }}">
+                                        <div class="small fw-bold text-dark">{{ m.maintenance_type }}</div>
+                                        <div class="text-muted small">{{ m.description }}</div>
+                                        <div class="d-flex justify-content-between text-secondary" style="font-size: 0.70rem;">
+                                            <span>Start: {{ m.start_time }}</span>
+                                            <span class="{{ 'text-danger fw-bold' if m.is_active else '' }}">{{ 'In Progress' if m.is_active else 'End: ' ~ (m.end_time or 'N/A') }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center text-muted small py-2">No maintenance logs.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const origin = [{{ origin_lat }}, {{ origin_lng }}];
+        const dest = [{{ dest_lat }}, {{ dest_lng }}];
+        const waypoints = JSON.parse('{{ waypoints_data | tojson | safe }}');
+        const departureTimeString = "{{ departure_time }}";
+        const durationHoursDecimal = parseFloat("{{ duration_hours }}") || 5;
+
+        function convertDecimalToHHMM(decimalHours) {
+            const hours = Math.floor(decimalHours);
+            const minutes = Math.round((decimalHours - hours) * 60);
+            return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+        }
+
+        document.getElementById('durationVal').innerText = convertDecimalToHHMM(durationHoursDecimal);
+
+        const map = L.map('map').setView(origin, 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© QAFELA Fleet Management'
+        }).addTo(map);
+
+        L.marker(origin, {icon: L.divIcon({html: '<i class="fas fa-map-marker-alt fa-2x text-success"></i>', className: '', iconSize: [30,30]})}).addTo(map).bindPopup('Origin');
+        L.marker(dest, {icon: L.divIcon({html: '<i class="fas fa-flag-checkered fa-2x text-danger"></i>', className: '', iconSize: [30,30]})}).addTo(map).bindPopup('Destination');
+
+        // عرض النقاط الوسيطة (Waypoints) على الخريطة
+        if (waypoints && waypoints.length > 0) {
+            waypoints.forEach(function(wp) {
+                if (wp.latitude && wp.longitude) {
+                    const wpIcon = L.divIcon({
+                        html: '<div style="background: white; border-radius: 50%; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><i class="fas fa-map-pin fa-lg text-info"></i></div>',
+                        className: '', iconSize: [32, 32], iconAnchor: [16, 16]
+                    });
+                    L.marker([wp.latitude, wp.longitude], {icon: wpIcon})
+                      .addTo(map)
+                      .bindPopup(`<strong>Waypoint (${wp.order}):</strong> ${wp.name}`);
+                }
+            });
+        }
+
+        const carIcon = L.divIcon({
+            html: '<i class="fas fa-truck-moving fa-2x text-white" style="background: #0d6efd; padding: 10px; border-radius: 50%; box-shadow: 0 4px 10px rgba(13,110,253,0.4);"></i>',
+            className: '', iconSize: [46, 46], iconAnchor: [23, 23]
+        });
+
+        const carMarker = L.marker(origin, {icon: carIcon}).addTo(map);
+        let routeCoordinates = [origin, dest];
+        let routePolyline = L.polyline(routeCoordinates, {color: '#0d6efd', weight: 6, opacity: 0.8}).addTo(map);
+
+        async function fetchRoadRoute() {
+            try {
+                // دمج نقطة البداية والنقاط الوسيطة ونقطة النهاية في رابط OSRM ليمر الخط عبرها بدقة
+                let coordsString = `${origin[1]},${origin[0]}`;
+                if (waypoints && waypoints.length > 0) {
+                    waypoints.forEach(wp => {
+                        if (wp.longitude && wp.latitude) {
+                            coordsString += `;${wp.longitude},${wp.latitude}`;
+                        }
+                    });
+                }
+                coordsString += `;${dest[1]},${dest[0]}`;
+
+                const url = `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.routes && data.routes.length > 0) {
+                    routeCoordinates = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    
+                    if (routePolyline) {
+                        map.removeLayer(routePolyline);
+                    }
+                    
+                    routePolyline = L.polyline(routeCoordinates, {
+                        color: '#0d6efd', 
+                        weight: 6, 
+                        opacity: 0.85, 
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    }).addTo(map);
+
+                    map.fitBounds(routePolyline.getBounds(), {padding: [50, 50]});
+                }
+            } catch (err) {
+                console.error("Error fetching road route:", err);
+                if (routePolyline) {
+                    map.removeLayer(routePolyline);
+                }
+                routePolyline = L.polyline(routeCoordinates, {color: '#0d6efd', weight: 6, opacity: 0.8}).addTo(map);
+                map.fitBounds(routePolyline.getBounds(), {padding: [50, 50]});
+            }
+
+            renderTimeBasedMarkers();
+
+            updateJourneyProgress();
+            setInterval(updateJourneyProgress, 3000);
+        }
+
+        function getPointAtTime(targetTimeString) {
+            if (!departureTimeString || !targetTimeString) return null;
+            const departureTime = new Date(departureTimeString);
+            const targetTime = new Date(targetTimeString);
+            
+            if (isNaN(departureTime.getTime()) || isNaN(targetTime.getTime())) return null;
+
+            const baseDurationMs = durationHoursDecimal * 60 * 60 * 1000;
+            const elapsedMs = targetTime - departureTime;
+            let ratio = elapsedMs / baseDurationMs;
+            
+            ratio = Math.min(Math.max(ratio, 0), 1);
+
+            const pointIndex = Math.min(
+                Math.floor(ratio * (routeCoordinates.length - 1)),
+                routeCoordinates.length - 1
+            );
+            return routeCoordinates[pointIndex] || routeCoordinates[0];
+        }
+
+        function renderTimeBasedMarkers() {
+            document.querySelectorAll('.stop-item-data').forEach(el => {
+                let lat = parseFloat(el.getAttribute('data-lat'));
+                let lng = parseFloat(el.getAttribute('data-lng'));
+                const startTime = el.getAttribute('data-start-time');
+                const endTime = el.getAttribute('data-end-time');
+                const isActive = el.getAttribute('data-is-active') === 'true';
+                const title = el.querySelector('.fw-bold').innerText;
+
+                let point = (!isNaN(lat) && !isNaN(lng)) ? [lat, lng] : getPointAtTime(startTime);
+                if (!point) return;
+
+                const stopIcon = L.divIcon({
+                    html: `<div style="background: white; border-radius: 50%; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><i class="fas fa-stop-circle fa-lg ${isActive ? 'text-danger' : 'text-warning'}"></i></div>`,
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                });
+                
+                const popupContent = `
+                    <strong>Stop: ${title}</strong><br>
+                    <hr style="margin: 4px 0;">
+                    <small><i class="fas fa-play text-success"></i> Start: ${startTime}</small><br>
+                    <small><i class="fas fa-stop text-danger"></i> End: ${endTime ? endTime : 'Active (Pending)'}</small><br>
+                    <span class="badge ${isActive ? 'bg-danger' : 'bg-secondary'} mt-1" style="font-size: 0.7rem;">${isActive ? 'Active' : 'Ended'}</span>
+                `;
+
+                L.marker(point, {icon: stopIcon}).addTo(map).bindPopup(popupContent);
+            });
+
+            document.querySelectorAll('.maint-item-data').forEach(el => {
+                let lat = parseFloat(el.getAttribute('data-lat'));
+                let lng = parseFloat(el.getAttribute('data-lng'));
+                const startTime = el.getAttribute('data-start-time');
+                const endTime = el.getAttribute('data-end-time');
+                const isActive = el.getAttribute('data-is-active') === 'true';
+                const title = el.querySelector('.fw-bold').innerText;
+                const desc = el.querySelector('.text-muted').innerText;
+
+                let point = (!isNaN(lat) && !isNaN(lng)) ? [lat, lng] : getPointAtTime(startTime);
+                if (!point) return;
+
+                const maintIcon = L.divIcon({
+                    html: `<div style="background: white; border-radius: 50%; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><i class="fas fa-tools fa-lg ${isActive ? 'text-danger' : 'text-secondary'}"></i></div>`,
+                    className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+                });
+
+                const popupContent = `
+                    <strong>Maintenance: ${title}</strong><br>
+                    <span class="text-muted small">${desc}</span><br>
+                    <hr style="margin: 4px 0;">
+                    <small><i class="fas fa-play text-success"></i> Start: ${startTime}</small><br>
+                    <small><i class="fas fa-stop text-danger"></i> End: ${endTime ? endTime : 'In Progress'}</small><br>
+                    <span class="badge ${isActive ? 'bg-danger' : 'bg-secondary'} mt-1" style="font-size: 0.7rem;">${isActive ? 'In Progress' : 'Completed'}</span>
+                `;
+
+                L.marker(point, {icon: maintIcon}).addTo(map).bindPopup(popupContent);
+            });
+        }
+
+        function updateJourneyProgress() {
+            const now = new Date();
+            const statusElement = document.getElementById('statusVal');
+            const progressPercentDisplay = document.getElementById('progressPercentDisplay');
+
+            if (!departureTimeString) {
+                statusElement.innerText = "No Departure Time Set";
+                statusElement.className = "badge badge-custom bg-secondary fs-6";
+                carMarker.setLatLng(origin);
+                progressPercentDisplay.innerText = "0%";
+                return;
+            }
+
+            const departureTime = new Date(departureTimeString);
+            if (isNaN(departureTime.getTime())) {
+                statusElement.innerText = "Invalid Departure Time";
+                statusElement.className = "badge badge-custom bg-danger fs-6";
+                return;
+            }
+
+            const baseDurationMs = durationHoursDecimal * 60 * 60 * 1000;
+
+            // 1. جمع الأحداث (التوقفات والصيانة)
+            let events = [];
+            document.querySelectorAll('.stop-item-data, .maint-item-data').forEach(el => {
+                const sTime = el.getAttribute('data-start-time');
+                const eTime = el.getAttribute('data-end-time');
+                const isActive = el.getAttribute('data-is-active') === 'true';
+                let lat = parseFloat(el.getAttribute('data-lat'));
+                let lng = parseFloat(el.getAttribute('data-lng'));
+
+                if (!sTime) return;
+                const startDate = new Date(sTime);
+                if (isNaN(startDate.getTime())) return;
+
+                const endDate = (eTime && eTime.trim() !== '') ? new Date(eTime) : null;
+                events.push({ startDate, endDate, isActive, lat, lng });
+            });
+
+            events.sort((a, b) => a.startDate - b.startDate);
+
+            // 2. التحقق مما إذا كانت السيارة متوقفة حالياً في صيانة أو توقف نشط
+            let isCurrentlyPaused = false;
+            let activeEventLocation = null;
+
+            for (let ev of events) {
+                let eventActiveNow = ev.isActive || (ev.endDate && now >= ev.startDate && now <= ev.endDate);
+                if (eventActiveNow) {
+                    isCurrentlyPaused = true;
+                    if (!isNaN(ev.lat) && !isNaN(ev.lng)) {
+                        activeEventLocation = [ev.lat, ev.lng];
+                    } else {
+                        activeEventLocation = getPointAtTime(ev.startDate.toISOString());
+                    }
+                    break;
+                }
+            }
+
+            if (isCurrentlyPaused) {
+                statusElement.innerText = "Paused (Stop / Maintenance)";
+                statusElement.className = "badge badge-custom bg-warning text-dark fs-6";
+                carMarker.setLatLng(activeEventLocation || origin);
+                progressPercentDisplay.innerText = "Paused";
+                return;
+            }
+
+            // 3. حساب إجمالي أوقات التوقفات والصيانة التي انتهت في الماضي
+            let totalStoppedMs = 0;
+            let lastEventEndTime = departureTime;
+
+            for (let ev of events) {
+                if (ev.endDate && now > ev.endDate) {
+                    totalStoppedMs += (ev.endDate - ev.startDate);
+                    if (ev.endDate > lastEventEndTime) {
+                        lastEventEndTime = ev.endDate;
+                    }
+                }
+            }
+
+            // 4. الحساب الصحيح: بدء التقدم من نقطة انتهاء الصيانة بناءً على الوقت المنقضي بعدها
+            let startPointForCurrentLeg = origin;
+            let baseRatioBeforeLeg = 0;
+
+            if (events.length > 0) {
+                let lastFinishedEvent = null;
+                for (let ev of events) {
+                    if (ev.endDate && now >= ev.endDate) {
+                        lastFinishedEvent = ev;
+                    }
+                }
+
+                if (lastFinishedEvent) {
+                    let evStartTimeStr = lastFinishedEvent.startDate.toISOString();
+                    let timeFromDepToStart = lastFinishedEvent.startDate - departureTime;
+                    baseRatioBeforeLeg = Math.min(Math.max(timeFromDepToStart / baseDurationMs, 0), 1);
+                    
+                    if (!isNaN(lastFinishedEvent.lat) && !isNaN(lastFinishedEvent.lng)) {
+                        startPointForCurrentLeg = [lastFinishedEvent.lat, lastFinishedEvent.lng];
+                    } else {
+                        startPointForCurrentLeg = getPointAtTime(evStartTimeStr);
+                    }
+                }
+            }
+
+            let timeSinceLastEvent = now - lastEventEndTime;
+            if (timeSinceLastEvent < 0) timeSinceLastEvent = 0;
+
+            let remainingJourneyTimeMs = baseDurationMs - (lastEventEndTime - departureTime - totalStoppedMs);
+            if (remainingJourneyTimeMs <= 0) remainingJourneyTimeMs = 1;
+
+            let remainingDistanceRatio = timeSinceLastEvent / remainingJourneyTimeMs;
+            let totalProgress = baseRatioBeforeLeg + (remainingDistanceRatio * (1 - baseRatioBeforeLeg));
+            
+            totalProgress = Math.min(Math.max(totalProgress, 0), 1);
+
+            if (totalProgress >= 1) {
+                statusElement.innerText = "Arrived Destination";
+                statusElement.className = "badge badge-custom bg-success fs-6";
+                totalProgress = 1;
+            } else {
+                statusElement.innerText = "In Transit (On Road)";
+                statusElement.className = "badge badge-custom bg-primary fs-6";
+            }
+
+            progressPercentDisplay.innerText = (totalProgress * 100).toFixed(1) + "%";
+
+            const pointIndex = Math.min(
+                Math.floor(totalProgress * (routeCoordinates.length - 1)),
+                routeCoordinates.length - 1
+            );
+            const currentPoint = routeCoordinates[pointIndex] || startPointForCurrentLeg;
+            
+            carMarker.setLatLng(currentPoint);
+            carMarker.bindPopup(`<strong>Vehicle Moving</strong><br>Progress: ${(totalProgress * 100).toFixed(1)}%<br><small>Resumed after maintenance</small>`);
+
+            if (now >= lastEventEndTime && totalProgress < 1) {
+                map.panTo(currentPoint, {animate: true});
+            }
+        }
+
+        fetchRoadRoute();
+    </script>
+</body>
+</html>

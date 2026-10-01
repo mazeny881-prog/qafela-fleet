@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trailers Management - QAFELA Fleet System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .sidebar-menu {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1b263b;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+        .license-date-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            gap: 6px;
+            border: 1px solid transparent;
+        }
+        .date-valid {
+            background-color: #f1f8f5;
+            color: #2e7d32;
+            border-color: #c8e6c9;
+        }
+        .date-warning {
+            background-color: #fffde7;
+            color: #f57f17;
+            border-color: #fff59d;
+        }
+        .date-danger {
+            background-color: #ffebee;
+            color: #c62828;
+            border-color: #ffcdd2;
+        }
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        th.sortable:hover {
+            background-color: #e9ecef;
+        }
+        .sort-icon {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <h2 class="mb-4">Trailers Management</h2>
+
+        <!-- Filters & Search Form -->
+        <div class="card stat-card bg-white p-3 mb-4">
+            <form method="GET" action="/trailers" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Company</label>
+                    <select name="company_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Companies</option>
+                        {% for comp in companies %}
+                            <option value="{{ comp.id }}" {% if selected_company_id == comp.id %}selected{% endif %}>{{ comp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Client</label>
+                    <select name="client_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Clients</option>
+                        {% for client in clients %}
+                            <option value="{{ client.id }}" {% if selected_client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Segment</label>
+                    <select name="segment_id" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Segments</option>
+                        {% for seg in segments %}
+                            <option value="{{ seg.id }}" {% if selected_segment_id == seg.id %}selected{% endif %}>{{ seg.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Search</label>
+                    <div class="input-group">
+                        <input type="text" name="q" id="searchTrailer" class="form-control" placeholder="Search by number or code..." value="{{ search_query }}">
+                        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Add New Trailer Form -->
+        <div class="card stat-card bg-white p-4 mb-4">
+            <h5 class="mb-3">Add New Trailer</h5>
+            <form action="/trailers/add" method="POST">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Plate Number</label>
+                        <input type="text" name="trailer_number" class="form-control" placeholder="Enter plate number" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">License Expiry</label>
+                        <input type="date" name="license_expiry" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Company <span class="text-danger">*</span></label>
+                        <select name="company_id" id="add_company_id" class="form-select" required onchange="filterClients('add')">
+                            <option value="">-- Select Company --</option>
+                            {% for comp in companies %}
+                                <option value="{{ comp.id }}">{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Client</label>
+                        <select name="client_id" id="add_client_id" class="form-select" disabled onchange="filterSegments('add')">
+                            <option value="0">-- None --</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}" data-company-id="{{ client.company_id }}">{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Segment</label>
+                        <select name="segment_id" id="add_segment_id" class="form-select" disabled>
+                            <option value="0">-- None --</option>
+                            {% for seg in segments %}
+                                <option value="{{ seg.id }}" data-client-id="{{ seg.client_id }}">{{ seg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success mt-2">Save Trailer</button>
+            </form>
+        </div>
+
+        <!-- Trailers Table -->
+        <div class="card stat-card bg-white p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="trailersTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortTableByCode(0)">Code <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                            <th>Plate Number</th>
+                            <th>Company / Client / Segment</th>
+                            <th class="sortable" onclick="sortTableByExpiry(3)">License Expiry <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                            <th class="sortable" onclick="sortTableByStatus(4)">Status <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in trailers %}
+                        <tr>
+                            <td data-code="{{ t.code }}">{{ t.code }}</td>
+                            <td>{{ t.trailer_number if t.trailer_number is defined else t.plate_number }}</td>
+                            <td>
+                                <small class="text-muted">
+                                    Comp: {{ t.company.name if t.company else '-' }} <br>
+                                    Client: {{ t.client.name if t.client else '-' }} <br>
+                                    Seg: {{ t.segment.name if t.segment else '-' }}
+                                </small>
+                            </td>
+                            <td data-date="{{ t.license_expiry }}">{{ t.license_expiry }}</td>
+                            <td data-status="{{ t.status }}">
+                                {% if t.status == 'Active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editTrailerModal{{ t.id }}" onclick="initEditModal('edit_{{ t.id }}')">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </button>
+                                <form action="/trailers/delete/{{ t.id }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this trailer?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Edit Trailer -->
+                        <div class="modal fade" id="editTrailerModal{{ t.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <form action="/trailers/update/{{ t.id }}" method="POST">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Edit Trailer: {{ t.code }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Plate Number</label>
+                                                    <input type="text" name="trailer_number" class="form-control" value="{{ t.trailer_number if t.trailer_number is defined else t.plate_number }}" required>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">License Expiry</label>
+                                                    <input type="date" name="license_expiry" class="form-control" value="{{ t.license_expiry }}" required>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Status</label>
+                                                    <select name="status" class="form-select">
+                                                        <option value="Active" {% if t.status == 'Active' %}selected{% endif %}>Active</option>
+                                                        <option value="Inactive" {% if t.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Company <span class="text-danger">*</span></label>
+                                                    <select name="company_id" id="edit_{{ t.id }}_company_id" class="form-select" required onchange="filterClients('edit_{{ t.id }}')">
+                                                        <option value="">-- Select Company --</option>
+                                                        {% for comp in companies %}
+                                                            <option value="{{ comp.id }}" {% if t.company_id == comp.id %}selected{% endif %}>{{ comp.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Client</label>
+                                                    <select name="client_id" id="edit_{{ t.id }}_client_id" class="form-select" onchange="filterSegments('edit_{{ t.id }}')">
+                                                        <option value="0">-- None --</option>
+                                                        {% for client in clients %}
+                                                            <option value="{{ client.id }}" data-company-id="{{ client.company_id }}" {% if t.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-4 mb-3">
+                                                    <label class="form-label">Segment</label>
+                                                    <select name="segment_id" id="edit_{{ t.id }}_segment_id" class="form-select">
+                                                        <option value="0">-- None --</option>
+                                                        {% for seg in segments %}
+                                                            <option value="{{ seg.id }}" data-client-id="{{ seg.client_id }}" {% if t.segment_id == seg.id %}selected{% endif %}>{{ seg.name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Real-time search
+        document.getElementById('searchTrailer').addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#trailersTable tbody tr');
+            rows.forEach(row => {
+                let text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        });
+
+        // Dependent Dropdowns Logic (Company -> Client -> Segment)
+        function filterClients(prefix, isInit = false) {
+            const companySelect = document.getElementById(prefix + '_company_id');
+            const clientSelect = document.getElementById(prefix + '_client_id');
+            const segmentSelect = document.getElementById(prefix + '_segment_id');
+            
+            const selectedCompanyId = companySelect.value;
+
+            if (!isInit) {
+                clientSelect.value = "0";
+                segmentSelect.value = "0";
+            }
+
+            if (!selectedCompanyId) {
+                clientSelect.disabled = true;
+                segmentSelect.disabled = true;
+                Array.from(clientSelect.options).forEach(opt => {
+                    if (opt.value !== "0") opt.style.display = 'none';
+                });
+                Array.from(segmentSelect.options).forEach(opt => {
+                    if (opt.value !== "0") opt.style.display = 'none';
+                });
+                return;
+            }
+
+            clientSelect.disabled = false;
+            
+            Array.from(clientSelect.options).forEach(opt => {
+                if (opt.value === "0") {
+                    opt.style.display = '';
+                    return;
+                }
+                const compId = opt.getAttribute('data-company-id');
+                if (compId === selectedCompanyId) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            if (!isInit) {
+                segmentSelect.disabled = true;
+                Array.from(segmentSelect.options).forEach(opt => {
+                    if (opt.value !== "0") opt.style.display = 'none';
+                });
+            } else {
+                filterSegments(prefix, true);
+            }
+        }
+
+        function filterSegments(prefix, isInit = false) {
+            const clientSelect = document.getElementById(prefix + '_client_id');
+            const segmentSelect = document.getElementById(prefix + '_segment_id');
+            
+            const selectedClientId = clientSelect.value;
+
+            if (!isInit) {
+                segmentSelect.value = "0";
+            }
+
+            if (!selectedClientId || selectedClientId === "0") {
+                segmentSelect.disabled = true;
+                Array.from(segmentSelect.options).forEach(opt => {
+                    if (opt.value !== "0") opt.style.display = 'none';
+                });
+                return;
+            }
+
+            segmentSelect.disabled = false;
+            
+            Array.from(segmentSelect.options).forEach(opt => {
+                if (opt.value === "0") {
+                    opt.style.display = '';
+                    return;
+                }
+                const clientId = opt.getAttribute('data-client-id');
+                if (clientId === selectedClientId) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        }
+
+        function initEditModal(prefix) {
+            setTimeout(() => {
+                filterClients(prefix, true);
+            }, 100);
+        }
+
+        // Initialization
+        document.addEventListener("DOMContentLoaded", function() {
+            const addClient = document.getElementById('add_client_id');
+            const addSegment = document.getElementById('add_segment_id');
+            if(addClient) addClient.disabled = true;
+            if(addSegment) addSegment.disabled = true;
+
+            const today = new Date("2026-09-01");
+            const rows = document.querySelectorAll("#trailersTable tbody tr");
+
+            rows.forEach(row => {
+                const expiryCell = row.querySelector("td[data-date]");
+                if (expiryCell) {
+                    const dateStr = expiryCell.getAttribute("data-date");
+                    if(!dateStr) return;
+                    const expiryDate = new Date(dateStr);
+                    const diffTime = expiryDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    let pillClass = "date-valid";
+                    let icon = '<i class="bi bi-shield-check"></i>';
+
+                    if (diffDays < 0) {
+                        pillClass = "date-danger";
+                        icon = '<i class="bi bi-exclamation-octagon-fill"></i>';
+                    } else if (diffDays <= 30) {
+                        pillClass = "date-danger";
+                        icon = '<i class="bi bi-exclamation-triangle-fill"></i>';
+                    } else if (diffDays <= 60) {
+                        pillClass = "date-warning";
+                        icon = '<i class="bi bi-bell-fill"></i>';
+                    }
+
+                    expiryCell.innerHTML = `
+                        <span class="license-date-pill ${pillClass}">
+                            ${icon} <span>${dateStr}</span>
+                        </span>
+                    `;
+                }
+            });
+        });
+
+        // Sorting functions
+        let sortCodeDirection = false;
+        function sortTableByCode(colIndex) {
+            const table = document.getElementById("trailersTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            rows.sort((a, b) => {
+                const aVal = a.querySelectorAll("td")[colIndex].getAttribute("data-code") || "";
+                const bVal = b.querySelectorAll("td")[colIndex].getAttribute("data-code") || "";
+                return sortCodeDirection ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+            sortCodeDirection = !sortCodeDirection;
+            rows.forEach(row => tbody.appendChild(row));
+            updateSortIcons(0, sortCodeDirection);
+        }
+
+        let sortExpiryDirection = false;
+        function sortTableByExpiry(colIndex) {
+            const table = document.getElementById("trailersTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            rows.sort((a, b) => {
+                const aDate = new Date(a.querySelectorAll("td")[colIndex].getAttribute("data-date") || "");
+                const bDate = new Date(b.querySelectorAll("td")[colIndex].getAttribute("data-date") || "");
+                return sortExpiryDirection ? aDate - bDate : bDate - aDate;
+            });
+            sortExpiryDirection = !sortExpiryDirection;
+            rows.forEach(row => tbody.appendChild(row));
+            updateSortIcons(3, sortExpiryDirection);
+        }
+
+        let sortStatusDirection = false;
+        function sortTableByStatus(colIndex) {
+            const table = document.getElementById("trailersTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            rows.sort((a, b) => {
+                const aStatus = a.querySelectorAll("td")[colIndex].getAttribute("data-status") || "";
+                const bStatus = b.querySelectorAll("td")[colIndex].getAttribute("data-status") || "";
+                return sortStatusDirection ? aStatus.localeCompare(bStatus) : bStatus.localeCompare(aStatus);
+            });
+            sortStatusDirection = !sortStatusDirection;
+            rows.forEach(row => tbody.appendChild(row));
+            updateSortIcons(4, sortStatusDirection);
+        }
+
+        function updateSortIcons(columnIndex, isAscending) {
+            const headers = document.querySelectorAll("#trailersTable th.sortable");
+            headers.forEach((th, idx) => {
+                const icon = th.querySelector(".sort-icon");
+                if (idx === (columnIndex === 3 ? 1 : columnIndex === 4 ? 2 : 0)) {
+                    icon.className = isAscending ? "bi bi-sort-up text-primary sort-icon" : "bi bi-sort-down text-primary sort-icon";
+                } else {
+                    icon.className = "bi bi-arrow-down-up sort-icon";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

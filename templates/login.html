@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - QAFELA Fleet System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%);
+        }
+
+        .bg-slideshow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -3;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #415a77 100%);
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: -2;
+        }
+
+        .bg-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.08;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .bg-custom {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 440px;
+            transition: transform 0.3s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .brand-logo-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+            border-color: #0d6efd;
+        }
+
+        .btn-primary {
+            padding: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            background-color: #0d1b2a;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #1b263b;
+        }
+
+        .alert-danger {
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-slideshow"></div>
+<div class="bg-overlay"></div>
+
+<div class="bg-watermark">
+    <svg width="350" height="350" viewBox="0 0 24 24" fill="#ffffff" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 3H16V16H1V3Z" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+        <path d="M16 8H20L23 11V16H16V8Z" fill="#ffffff"/>
+        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+    </svg>
+</div>
+
+<div class="bg-custom">
+    <div class="login-card text-center">
+        <div class="brand-logo-container d-flex flex-column align-items-center justify-content-center">
+            <div class="d-flex align-items-center justify-content-center mb-1">
+                <svg width="45" height="45" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                    <path d="M1 3H16V16H1V3Z" fill="#0d1b2a" stroke="#ff9f1c" stroke-width="2"/>
+                    <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                    <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                </svg>
+                <span class="fw-bold fs-3" style="color: #0d1b2a; letter-spacing: 1px;">QAFELA</span>
+            </div>
+            <span class="text-muted" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">HEAVY TRANSPORT & FLEET MANAGEMENT</span>
+        </div>
+
+        {% if error %}
+            <div class="alert alert-danger py-2 mb-3" role="alert">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>{{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/login" method="POST" class="text-start">
+            <div class="mb-3">
+                <label for="username" class="form-label text-secondary fw-semibold small">Username</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-user"></i></span>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="password" class="form-label text-secondary fw-semibold small">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary shadow-sm">
+                    <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-4 text-muted small">
+            &copy; 2026 QAFELA. Developed by Mazen Yasser. All rights reserved.
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

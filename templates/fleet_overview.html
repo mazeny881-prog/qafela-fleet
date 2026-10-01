@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Assignments Overview - QAFELA Fleet System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed; top: 0; left: 0; height: 100vh; width: 240px;
+            background-color: #0d1b2a; padding-top: 20px; color: white;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .sidebar-menu { overflow-y: auto; flex-grow: 1; }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd; text-decoration: none; display: flex; align-items: center;
+            padding: 10px 20px; font-size: 0.95rem; transition: 0.2s;
+        }
+        .sidebar a i { margin-right: 10px; font-size: 1.1rem; }
+        .sidebar a:hover, .sidebar a.active { color: white; background-color: #1b263b; }
+        .main-content { margin-left: 240px; padding: 30px; }
+        .stat-card { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); }
+        .license-badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; }
+        .sort-icon { cursor: pointer; color: #adb5bd; font-size: 0.8rem; margin-left: 5px; }
+        .sort-icon:hover { color: #fff; }
+        th { white-space: nowrap; user-select: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+            
+            <div id="errorAlert" class="alert alert-danger alert-dismissible fade show shadow-sm mb-4 text-end" role="alert" dir="rtl" style="display: none;">
+                <i class="bi bi-exclamation-triangle-fill ms-2 fs-5"></i><span id="errorMessage" class="fw-bold"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="left: auto; right: 0;"></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2>Fleet Assignments Overview</h2>
+                    <p class="text-muted">Manage fixed and manual relationships with dedicated columns and sorting.</p>
+                </div>
+                <div>
+                    <a href="/fleet-overview/export?company_id={{ selected_company or '' }}&client_id={{ selected_client or '' }}&segment_id={{ selected_segment or '' }}" class="btn btn-success me-2">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                    </a>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignmentModal" onclick="openAddModal()">
+                        <i class="bi bi-plus-lg me-1"></i> New Assignment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card stat-card mb-4 p-3">
+                <form method="GET" action="/fleet-overview" class="row g-3 align-items-end" id="filterForm">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Transport Company</label>
+                        <select name="company_id" class="form-select" onchange="this.form.submit()" {% if current_user.company_id %}disabled{% endif %}>
+                            {% if not current_user.company_id %}
+                            <option value="">All Companies</option>
+                            {% endif %}
+                            {% for comp in companies %}
+                                {% if not current_user.company_id or current_user.company_id == comp.id %}
+                                <option value="{{ comp.id }}" {% if selected_company == comp.id or current_user.company_id == comp.id %}selected{% endif %}>{{ comp.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        {% if current_user.company_id %}
+                        <input type="hidden" name="company_id" value="{{ current_user.company_id }}">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Client</label>
+                        <select name="client_id" class="form-select" onchange="this.form.submit()" {% if current_user.client_id %}disabled{% endif %}>
+                            {% if not current_user.client_id %}
+                            <option value="">All Clients</option>
+                            {% endif %}
+                            {% for client in clients %}
+                                {% if not current_user.client_id or current_user.client_id == client.id %}
+                                <option value="{{ client.id }}" {% if selected_client == client.id or current_user.client_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        {% if current_user.client_id %}
+                        <input type="hidden" name="client_id" value="{{ current_user.client_id }}">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Segment / Branch</label>
+                        <select name="segment_id" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Segments</option>
+                            {% for seg in segments %}
+                            <option value="{{ seg.id }}" {% if selected_segment == seg.id %}selected{% endif %}>{{ seg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Table -->
+            <div class="card stat-card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="fleetTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th onclick="sortTable(0)"># <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(1)">Vehicle Plate <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(2)">Vehicle Type <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(3)">Vehicle Phone <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(4)">Vehicle License <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(5)">Driver Name <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(6)">Driver Phone <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(7)">Driver License <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(8)">Trailer Number <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(9)">Trailer License <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(10)">Company <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(11)">Client <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th onclick="sortTable(12)">Segment <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if fleet_data %}
+                                    {% for row in fleet_data %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td class="fw-bold text-primary">{{ row.vehicle_plate }}</td>
+                                        <td>{{ row.vehicle_type or 'Truck' }}</td>
+                                        <td>{{ row.vehicle_phone or '-' }}</td>
+                                        <td>
+                                            <span class="license-badge" data-expiry="{{ row.vehicle_license }}">
+                                                {{ row.vehicle_license or 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td class="fw-bold">{{ row.driver_name }}</td>
+                                        <td>{{ row.driver_phone or '-' }}</td>
+                                        <td>
+                                            <span class="license-badge" data-expiry="{{ row.driver_license }}">
+                                                {{ row.driver_license or 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if row.trailer_number %}
+                                                <span class="badge bg-secondary">{{ row.trailer_number }}</span>
+                                            {% else %}
+                                                <span class="text-muted">No Trailer</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.trailer_number %}
+                                                <span class="trailer-expiry" data-expiry="{{ row.trailer_license }}">
+                                                    {{ row.trailer_license or 'N/A' }}
+                                                </span>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ row.company_name }}</td>
+                                        <td>{{ row.client_name or '-' }}</td>
+                                        <td>{{ row.segment_name or '-' }}</td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('{{ row.id }}', '{{ row.company_id }}', '{{ row.client_id }}', '{{ row.segment_id }}', '{{ row.vehicle_id }}', '{{ row.driver_id }}', '{{ row.trailer_id }}')">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <a href="/fleet-overview/delete/{{ row.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this assignment?');">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="14" class="text-center py-4 text-muted">No fleet assignments found matching filters.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="assignmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="/fleet-overview/save" onsubmit="return validateForm()">
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title" id="modalTitle">New Fleet Assignment</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="assignment_id" id="modalAssignmentId">
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Company *</label>
+                                <select name="company_id" id="modalCompanyId" class="form-select" required {% if current_user.company_id %}disabled{% endif %} onchange="filterModalOptions()">
+                                    {% if not current_user.company_id %}
+                                    <option value="" disabled selected>Select Company...</option>
+                                    {% endif %}
+                                    {% for comp in companies %}
+                                        {% if not current_user.company_id or current_user.company_id == comp.id %}
+                                        <option value="{{ comp.id }}" {% if current_user.company_id == comp.id or companies|length == 1 %}selected{% endif %}>{{ comp.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% if current_user.company_id %}
+                                <input type="hidden" name="company_id" value="{{ current_user.company_id }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Client *</label>
+                                <select name="client_id" id="modalClientId" class="form-select" required {% if current_user.client_id %}disabled{% endif %} onchange="filterModalOptions()">
+                                    {% if not current_user.client_id %}
+                                    <option value="" disabled selected>Select Client...</option>
+                                    {% endif %}
+                                    {% for client in clients %}
+                                        {% if not current_user.client_id or current_user.client_id == client.id %}
+                                        <option value="{{ client.id }}" data-company-id="{{ client.company_id }}" {% if current_user.client_id == client.id or clients|length == 1 %}selected{% endif %}>{{ client.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% if current_user.client_id %}
+                                <input type="hidden" name="client_id" value="{{ current_user.client_id }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Segment / Branch</label>
+                                <select name="segment_id" id="modalSegmentId" class="form-select" onchange="filterModalOptions()">
+                                    <option value="">Select Segment...</option>
+                                    {% for seg in segments %}
+                                    <option value="{{ seg.id }}" data-client-id="{{ seg.client_id }}">{{ seg.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Vehicle *</label>
+                                <select name="vehicle_id" id="modalVehicleId" class="form-select" required onchange="checkVehicleType()" disabled>
+                                    <option value="" disabled selected>Select Client First...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Driver *</label>
+                                <select name="driver_id" id="modalDriverId" class="form-select" required disabled>
+                                    <option value="" disabled selected>Select Client First...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold" id="trailerLabel">Trailer <span id="trailerReqMarker" class="text-danger">*</span></label>
+                                <select name="trailer_id" id="modalTrailerId" class="form-select" disabled>
+                                    <option value="">Select Client First...</option>
+                                </select>
+                                <small id="trailerHelpText" class="text-muted">Required for Trucks.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Assignment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const allVehicles = JSON.parse('{{ vehicles | tojson | safe }}');
+        const allDrivers = JSON.parse('{{ drivers | tojson | safe }}');
+        const allTrailers = JSON.parse('{{ trailers | tojson | safe }}');
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorMsg = urlParams.get('error');
+            if (errorMsg) {
+                const errAlert = document.getElementById('errorAlert');
+                const errSpan = document.getElementById('errorMessage');
+                if (errAlert && errSpan) {
+                    errSpan.innerText = errorMsg;
+                    errAlert.style.display = 'block';
+                }
+            }
+
+            const today = new Date();
+
+            document.querySelectorAll('.license-badge, .trailer-expiry').forEach(function(el) {
+                const expiryDateStr = el.getAttribute('data-expiry');
+                if (!expiryDateStr || expiryDateStr === 'N/A' || expiryDateStr === 'None') {
+                    el.classList.add('badge', 'bg-light', 'text-dark');
+                    return;
+                }
+
+                const expiryDate = new Date(expiryDateStr);
+                const diffTime = expiryDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                el.classList.add('badge');
+                if (diffDays < 0) {
+                    el.classList.add('bg-danger');
+                    el.title = "Expired!";
+                } else if (diffDays <= 30) {
+                    el.classList.add('bg-warning', 'text-dark');
+                    el.title = "Expires soon (" + diffDays + " days left)";
+                } else {
+                    el.classList.add('bg-success');
+                    el.title = "Valid (" + diffDays + " days left)";
+                }
+            });
+
+            const hasPredefinedClient = Boolean("{{ current_user.client_id or '' }}" || "{{ clients|length == 1 }}");
+            if (hasPredefinedClient) {
+                filterModalOptions();
+            }
+        });
+
+        function sortTable(columnIndex) {
+            const table = document.getElementById("fleetTable");
+            let switching = true;
+            let dir = "asc";
+            let switchCount = 0;
+
+            while (switching) {
+                switching = false;
+                const rows = table.rows;
+                for (let i = 1; i < (rows.length - 1); i++) {
+                    let shouldSwitch = false;
+                    const x = rows[i].getElementsByTagName("TD")[columnIndex];
+                    const y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
+                    
+                    const xVal = x.textContent || x.innerText;
+                    const yVal = y.textContent || y.innerText;
+
+                    if (dir === "asc") {
+                        if (xVal.toLowerCase() > yVal.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir === "desc") {
+                        if (xVal.toLowerCase() < yVal.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchCount++;
+                } else {
+                    if (switchCount === 0 && dir === "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+
+        function filterModalOptions(selectedVehId = null, selectedDrvId = null, selectedTrlId = null) {
+            const compSelect = document.getElementById('modalCompanyId');
+            const compId = compSelect ? compSelect.value : '{{ current_user.company_id or "" }}';
+            
+            const clientSelect = document.getElementById('modalClientId');
+            const clientId = clientSelect ? clientSelect.value : '{{ current_user.client_id or "" }}';
+            
+            const segId = document.getElementById('modalSegmentId').value;
+
+            const vehicleSelect = document.getElementById('modalVehicleId');
+            const driverSelect = document.getElementById('modalDriverId');
+            const trailerSelect = document.getElementById('modalTrailerId');
+
+            if (!clientId) {
+                vehicleSelect.innerHTML = '<option value="" disabled selected>Select Client First...</option>';
+                vehicleSelect.disabled = true;
+                driverSelect.innerHTML = '<option value="" disabled selected>Select Client First...</option>';
+                driverSelect.disabled = true;
+                trailerSelect.innerHTML = '<option value="">Select Client First...</option>';
+                trailerSelect.disabled = true;
+                return;
+            }
+
+            vehicleSelect.disabled = false;
+            driverSelect.disabled = false;
+            trailerSelect.disabled = false;
+
+            const filteredVehicles = allVehicles.filter(v => {
+                if (compId && v.company_id != compId) return false;
+                if (v.client_id != clientId) return false;
+                if (segId && v.segment_id != segId) return false;
+                return true;
+            });
+
+            vehicleSelect.innerHTML = '<option value="" disabled selected>Select Vehicle...</option>';
+            filteredVehicles.forEach(v => {
+                const selected = selectedVehId == v.id ? 'selected' : '';
+                vehicleSelect.innerHTML += `<option value="${v.id}" data-type="${v.vehicle_type || 'Truck'}" ${selected}>${v.plate_number} (${v.vehicle_type || 'Truck'})</option>`;
+            });
+
+            const filteredDrivers = allDrivers.filter(d => {
+                if (compId && d.company_id != compId) return false;
+                if (d.client_id != clientId) return false;
+                if (segId && d.segment_id != segId) return false;
+                return true;
+            });
+
+            driverSelect.innerHTML = '<option value="" disabled selected>Select Driver...</option>';
+            filteredDrivers.forEach(d => {
+                const selected = selectedDrvId == d.id ? 'selected' : '';
+                driverSelect.innerHTML += `<option value="${d.id}" ${selected}>${d.name}</option>`;
+            });
+
+            const filteredTrailers = allTrailers.filter(t => {
+                if (compId && t.company_id != compId) return false;
+                if (t.client_id != clientId) return false;
+                if (segId && t.segment_id != segId) return false;
+                return true;
+            });
+
+            trailerSelect.innerHTML = '<option value="">No Trailer</option>';
+            filteredTrailers.forEach(t => {
+                const selected = selectedTrlId == t.id ? 'selected' : '';
+                trailerSelect.innerHTML += `<option value="${t.id}" ${selected}>${t.trailer_number}</option>`;
+            });
+
+            checkVehicleType();
+        }
+
+        function checkVehicleType() {
+            const vehicleSelect = document.getElementById('modalVehicleId');
+            const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+            const trailerSelect = document.getElementById('modalTrailerId');
+            const trailerReqMarker = document.getElementById('trailerReqMarker');
+            const trailerHelpText = document.getElementById('trailerHelpText');
+
+            let vType = selectedOption ? selectedOption.getAttribute('data-type') : 'Truck';
+            if (!vType) vType = 'Truck';
+
+            if (vType.toLowerCase() !== 'truck') {
+                trailerSelect.removeAttribute('required');
+                trailerReqMarker.style.display = 'none';
+                trailerHelpText.innerText = 'Optional (Vehicle type is ' + vType + ').';
+            } else {
+                trailerSelect.setAttribute('required', 'required');
+                trailerReqMarker.style.display = 'inline';
+                trailerHelpText.innerText = 'Required for Trucks.';
+            }
+        }
+
+        function validateForm() {
+            const vehicleSelect = document.getElementById('modalVehicleId');
+            const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+            let vType = selectedOption ? selectedOption.getAttribute('data-type') : 'Truck';
+            const trailerSelect = document.getElementById('modalTrailerId');
+
+            if (vType && vType.toLowerCase() === 'truck' && !trailerSelect.value) {
+                alert('Trailer is mandatory for Truck vehicles!');
+                return false;
+            }
+            return true;
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').innerText = 'New Fleet Assignment';
+            document.getElementById('modalAssignmentId').value = '';
+            
+            const modalCompanyId = document.getElementById('modalCompanyId');
+            if (modalCompanyId && !modalCompanyId.disabled) {
+                modalCompanyId.value = '';
+            }
+            
+            const modalClientId = document.getElementById('modalClientId');
+            if (modalClientId && !modalClientId.disabled) {
+                modalClientId.value = '';
+            }
+            
+            document.getElementById('modalSegmentId').value = '';
+            filterModalOptions();
+        }
+
+        function openEditModal(id, compId, clientId, segId, vehId, drvId, trlId) {
+            document.getElementById('modalTitle').innerText = 'Edit Fleet Assignment';
+            document.getElementById('modalAssignmentId').value = id;
+            
+            const modalCompanyId = document.getElementById('modalCompanyId');
+            if (modalCompanyId && !modalCompanyId.disabled) {
+                modalCompanyId.value = compId || '';
+            }
+            
+            const modalClientId = document.getElementById('modalClientId');
+            if (modalClientId && !modalClientId.disabled) {
+                modalClientId.value = clientId != 'None' && clientId ? clientId : '';
+            }
+            
+            document.getElementById('modalSegmentId').value = segId != 'None' && segId ? segId : '';
+            
+            filterModalOptions(vehId, drvId, trlId != 'None' && trlId ? trlId : '');
+            var myModal = new bootstrap.Modal(document.getElementById('assignmentModal'));
+            myModal.show();
+        }
+    </script>
+</body>
+</html>

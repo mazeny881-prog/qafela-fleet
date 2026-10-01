@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Journey - QAFELA Fleet System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; font-family: system-ui, -apple-system, sans-serif; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 1000;
+        }
+        .sidebar-menu {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1b263b;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        /* تنسيقات شارات تنبيهات التراخيص الاحترافية والهادئة */
+        .expiry-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .expiry-safe {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .expiry-warning {
+            background-color: #fff8e1;
+            color: #f57f17;
+        }
+        .expiry-danger {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .expiry-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+            <h2 class="mb-4 fw-bold text-dark"><i class="fas fa-plus-circle text-success me-2"></i> Create New Journey</h2>
+
+            <div class="card p-4 bg-white shadow-sm rounded-3 border-0">
+                <form id="createJourneyForm" onsubmit="submitJourneyForm(event)">
+                    <div class="row g-3">
+                        
+                        <!-- Journey Serial & Created By -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Journey Serial</label>
+                            <input type="text" name="journey_serial" id="journeySerialInput" class="form-control bg-light text-muted" value="Auto-generated upon save" readonly required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Created By</label>
+                            <input type="text" name="created_by" class="form-control bg-light" value="{{ current_user.full_name or current_user.username }}" readonly>
+                        </div>
+
+                        <!-- 1. Client Company -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Client Company</label>
+                            <select name="client_company_id" id="clientCompanySelect" class="form-select" required onchange="onClientChange()">
+                                <option value="" selected disabled>Select Client Company...</option>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}" {% if pre_client_company_id == client.id %}selected{% endif %}>{{ client.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- 2. Client Segment / Branch -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Client Segment / Branch</label>
+                            <select name="segment_id" id="segmentSelect" class="form-select">
+                                <option value="" selected>Select Branch (Optional)...</option>
+                                {% for seg in segments %}
+                                <option value="{{ seg.id }}" {% if pre_segment_id == seg.id %}selected{% endif %}>{{ seg.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Driver Info -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Driver Name</label>
+                            <div class="input-group">
+                                <input type="text" id="driverNameDisplay" class="form-control" placeholder="Select driver..." readonly required>
+                                <button type="button" class="btn btn-outline-danger" onclick="clearDriver()"><i class="fas fa-times"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#driverSearchModal"><i class="fas fa-search"></i> Search</button>
+                                <input type="hidden" name="driver_id" id="driverId" value="{{ pre_driver_id or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Driver License Expiry</label>
+                            <input type="text" id="driverLicense" class="form-control bg-light" readonly>
+                        </div>
+
+                        <!-- Vehicle Info -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Vehicle Plate Number</label>
+                            <div class="input-group">
+                                <input type="text" id="vehicleNumberDisplay" class="form-control" placeholder="Select vehicle plate..." readonly required>
+                                <button type="button" class="btn btn-outline-danger" onclick="clearVehicle()"><i class="fas fa-times"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#vehicleSearchModal"><i class="fas fa-search"></i> Search</button>
+                                <input type="hidden" name="vehicle_id" id="vehicleId" value="{{ pre_vehicle_id or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Vehicle License Expiry</label>
+                            <input type="text" id="vehicleLicense" class="form-control bg-light" readonly>
+                        </div>
+
+                        <!-- Trailer Info -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Trailer Number</label>
+                            <div class="input-group">
+                                <input type="text" id="trailerNumberDisplay" class="form-control" placeholder="Select trailer number..." readonly>
+                                <button type="button" class="btn btn-outline-danger" onclick="clearTrailer()"><i class="fas fa-times"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#trailerSearchModal"><i class="fas fa-search"></i> Search</button>
+                                <input type="hidden" name="trailer_id" id="trailerId" value="{{ pre_trailer_id or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Trailer License Expiry</label>
+                            <input type="text" id="trailerLicense" class="form-control bg-light" readonly>
+                        </div>
+
+                        <!-- Route Info -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Route</label>
+                            <div class="input-group">
+                                <input type="text" id="routeNameDisplay" class="form-control" placeholder="Select route..." readonly required>
+                                <button type="button" class="btn btn-outline-danger" onclick="clearRoute()"><i class="fas fa-times"></i></button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#routeSearchModal"><i class="fas fa-search"></i> Search</button>
+                                <input type="hidden" name="route_id" id="routeId" value="{{ pre_route_id or '' }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Route Details / Distance</label>
+                            <div class="row g-2 bg-light p-2 rounded border m-0">
+                                <div class="col-6"><input type="text" id="routeOrigin" class="form-control form-control-sm bg-white" placeholder="Origin" readonly></div>
+                                <div class="col-6"><input type="text" id="routeDestination" class="form-control form-control-sm bg-white" placeholder="Destination" readonly></div>
+                                <div class="col-6 mt-1"><input type="text" id="routeKm" class="form-control form-control-sm bg-white" placeholder="Distance KM" readonly></div>
+                                <div class="col-6 mt-1"><input type="text" name="total_time" id="routeHours" class="form-control form-control-sm bg-white" placeholder="Estimated Hours" readonly></div>
+                            </div>
+                        </div>
+
+                        <!-- Load Type & Start Time -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Load Type</label>
+                            <select name="load_type_id" id="loadTypeSelect" class="form-select" required>
+                                <option value="" selected disabled>Select Client first...</option>
+                                {% for lt in load_types %}
+                                <option value="{{ lt.id }}" {% if pre_load_type_id == lt.id %}selected{% endif %}>{{ lt.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Manual Start Time</label>
+                            <input type="datetime-local" name="departure_time" id="departureTimeInput" class="form-control">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="col-12 mt-4">
+                            <button type="submit" id="saveBtn" class="btn btn-success px-5 py-2 fw-bold shadow-sm"><i class="fas fa-save me-2"></i> Save & Create Journey</button>
+                            <a href="/" class="btn btn-secondary px-4 py-2 ms-2">Cancel</a>
+                        </div>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal fade" id="driverSearchModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Search Driver</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="driverSearchInput" class="form-control mb-3" placeholder="Type driver name..." onkeyup="searchDrivers()"><div id="driverResults" class="list-group" style="max-height: 300px; overflow-y: auto;"></div></div></div></div></div>
+    <div class="modal fade" id="vehicleSearchModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Search Vehicle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="vehicleSearchInput" class="form-control mb-3" placeholder="Type vehicle plate..." onkeyup="searchVehicles()"><div id="vehicleResults" class="list-group" style="max-height: 300px; overflow-y: auto;"></div></div></div></div></div>
+    <div class="modal fade" id="trailerSearchModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Search Trailer</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="trailerSearchInput" class="form-control mb-3" placeholder="Type trailer number..." onkeyup="searchTrailers()"><div id="trailerResults" class="list-group" style="max-height: 300px; overflow-y: auto;"></div></div></div></div></div>
+    <div class="modal fade" id="routeSearchModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">Search Route</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input type="text" id="routeSearchInput" class="form-control mb-3" placeholder="Search route..." onkeyup="searchRoutes()"><div id="routeResults" class="list-group" style="max-height: 300px; overflow-y: auto;"></div></div></div></div></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script id="pageData" 
+        data-drivers='{{ drivers | tojson }}'
+        data-vehicles='{{ vehicles | tojson }}'
+        data-trailers='{{ trailers | tojson }}'
+        data-routes='{{ routes | tojson }}'>
+    </script>
+
+    <script>
+    const pageData = document.getElementById('pageData').dataset;
+    window.currentCompanyDrivers = JSON.parse(pageData.drivers || '[]');
+    window.currentCompanyVehicles = JSON.parse(pageData.vehicles || '[]');
+    window.currentCompanyTrailers = JSON.parse(pageData.trailers || '[]');
+    window.currentClientRoutes = JSON.parse(pageData.routes || '[]');
+
+    function onClientChange(callback) {
+        const clientCompanyId = document.getElementById('clientCompanySelect').value;
+        if (!clientCompanyId) return;
+
+        clearDriver();
+        clearVehicle();
+        clearTrailer();
+        clearRoute();
+
+        fetch(`/api/client-dependent-data?client_id=${clientCompanyId}`)
+            .then(res => res.json())
+            .then(data => {
+                const segmentSelect = document.getElementById('segmentSelect');
+                segmentSelect.innerHTML = '<option value="" selected>Select Branch (Optional)...</option>';
+                if (data.segments && Array.isArray(data.segments)) {
+                    data.segments.forEach(seg => {
+                        segmentSelect.innerHTML += `<option value="${seg.id}">${seg.name}</option>`;
+                    });
+                }
+
+                const loadSelect = document.getElementById('loadTypeSelect');
+                loadSelect.innerHTML = '<option value="" selected disabled>Select Load Type...</option>';
+                if (data.load_types && Array.isArray(data.load_types)) {
+                    data.load_types.forEach(lt => {
+                        loadSelect.innerHTML += `<option value="${lt.id}">${lt.name}</option>`;
+                    });
+                }
+
+                window.currentCompanyDrivers = data.drivers || [];
+                window.currentCompanyVehicles = data.vehicles || [];
+                window.currentCompanyTrailers = data.trailers || [];
+                window.currentClientRoutes = data.routes || [];
+
+                if (typeof callback === 'function') {
+                    callback();
+                }
+            })
+            .catch(err => console.error("Error fetching dependent data:", err));
+    }
+
+    // دالة التعبئة التلقائية عند فتح الصفحة عبر زر النسخ (Copy Journey)
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientCompanyId = urlParams.get('client_company_id');
+        
+        if (clientCompanyId) {
+            const clientSelect = document.getElementById('clientCompanySelect');
+            if (clientSelect) {
+                clientSelect.value = clientCompanyId;
+                
+                onClientChange(function() {
+                    const segmentId = urlParams.get('segment_id');
+                    const loadTypeId = urlParams.get('load_type_id');
+                    const vehicleId = urlParams.get('vehicle_id');
+                    const driverId = urlParams.get('driver_id');
+                    const trailerId = urlParams.get('trailer_id');
+                    const routeId = urlParams.get('route_id');
+
+                    if (segmentId) {
+                        const segSelect = document.getElementById('segmentSelect');
+                        if (segSelect) segSelect.value = segmentId;
+                    }
+
+                    if (loadTypeId) {
+                        const loadSelect = document.getElementById('loadTypeSelect');
+                        if (loadSelect) loadSelect.value = loadTypeId;
+                    }
+
+                    if (vehicleId && window.currentCompanyVehicles) {
+                        const v = window.currentCompanyVehicles.find(item => item.id == vehicleId);
+                        if (v) {
+                            selectVehicle(v.id, v.plate_number, v.license_expiry || "N/A");
+                        }
+                    }
+
+                    if (driverId && window.currentCompanyDrivers) {
+                        const d = window.currentCompanyDrivers.find(item => item.id == driverId);
+                        if (d) {
+                            selectDriver(d.id, d.name, d.license_expiry || "N/A");
+                        }
+                    }
+
+                    if (trailerId && window.currentCompanyTrailers) {
+                        const t = window.currentCompanyTrailers.find(item => item.id == trailerId);
+                        if (t) {
+                            selectTrailer(t.id, t.trailer_number, t.license_expiry || "N/A");
+                        }
+                    }
+
+                    if (routeId && window.currentClientRoutes) {
+                        const r = window.currentClientRoutes.find(item => item.id == routeId);
+                        if (r) {
+                            selectRoute(r);
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    // دالة توليد تصميم شارة التنبيه الاحترافية والهادئة للتراخيص
+    function getExpiryBadgeHTML(dateStr) {
+        if (!dateStr || dateStr === "N/A") return "N/A";
+        
+        const today = new Date("2026-09-01");
+        const expiryDate = new Date(dateStr);
+        const diffTime = expiryDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        let badgeClass = "expiry-safe";
+        let dotColor = "#2e7d32";
+
+        if (diffDays <= 30) {
+            badgeClass = "expiry-danger";
+            dotColor = "#c62828";
+        } else if (diffDays <= 60) {
+            badgeClass = "expiry-warning";
+            dotColor = "#f57f17";
+        }
+
+        return `
+            <span class="expiry-badge ${badgeClass}">
+                <span class="expiry-dot" style="background-color: ${dotColor};"></span>
+                ${dateStr}
+            </span>
+        `;
+    }
+
+    function searchDrivers() {
+        let q = document.getElementById('driverSearchInput').value.toLowerCase();
+        let container = document.getElementById('driverResults');
+        let filtered = (window.currentCompanyDrivers || []).filter(d => (d.name || "").toLowerCase().includes(q));
+        container.innerHTML = filtered.length ? '' : '<div class="text-center p-3 text-muted">No matching drivers</div>';
+        filtered.forEach(d => {
+            container.innerHTML += `<button type="button" class="list-group-item list-group-item-action text-start" onclick="selectDriver(${d.id}, '${d.name}', '${d.license_expiry || "N/A"}')">${d.name}</button>`;
+        });
+    }
+    function selectDriver(id, name, license) {
+        document.getElementById('driverId').value = id;
+        document.getElementById('driverNameDisplay').value = name;
+        
+        const licenseField = document.getElementById('driverLicense');
+        licenseField.outerHTML = `<div id="driverLicense" class="form-control bg-light d-flex align-items-center">${getExpiryBadgeHTML(license)}</div>`;
+        
+        bootstrap.Modal.getInstance(document.getElementById('driverSearchModal'))?.hide();
+    }
+    function clearDriver() { 
+        document.getElementById('driverId').value = ''; 
+        document.getElementById('driverNameDisplay').value = ''; 
+        const licenseField = document.getElementById('driverLicense');
+        licenseField.outerHTML = `<input type="text" id="driverLicense" class="form-control bg-light" readonly>`;
+    }
+
+    function searchVehicles() {
+        let q = document.getElementById('vehicleSearchInput').value.toLowerCase();
+        let container = document.getElementById('vehicleResults');
+        let filtered = (window.currentCompanyVehicles || []).filter(v => (v.plate_number || "").toLowerCase().includes(q));
+        container.innerHTML = filtered.length ? '' : '<div class="text-center p-3 text-muted">No matching vehicles</div>';
+        filtered.forEach(v => {
+            container.innerHTML += `<button type="button" class="list-group-item list-group-item-action text-start" onclick="selectVehicle(${v.id}, '${v.plate_number}', '${v.license_expiry || "N/A"}')">${v.plate_number}</button>`;
+        });
+    }
+    function selectVehicle(id, plate, license) {
+        document.getElementById('vehicleId').value = id;
+        document.getElementById('vehicleNumberDisplay').value = plate;
+        
+        const licenseField = document.getElementById('vehicleLicense');
+        licenseField.outerHTML = `<div id="vehicleLicense" class="form-control bg-light d-flex align-items-center">${getExpiryBadgeHTML(license)}</div>`;
+        
+        bootstrap.Modal.getInstance(document.getElementById('vehicleSearchModal'))?.hide();
+    }
+    function clearVehicle() { 
+        document.getElementById('vehicleId').value = ''; 
+        document.getElementById('vehicleNumberDisplay').value = ''; 
+        const licenseField = document.getElementById('vehicleLicense');
+        licenseField.outerHTML = `<input type="text" id="vehicleLicense" class="form-control bg-light" readonly>`;
+    }
+
+    function searchTrailers() {
+        let q = document.getElementById('trailerSearchInput').value.toLowerCase();
+        let container = document.getElementById('trailerResults');
+        let filtered = (window.currentCompanyTrailers || []).filter(t => (t.trailer_number || "").toLowerCase().includes(q));
+        container.innerHTML = filtered.length ? '' : '<div class="text-center p-3 text-muted">No matching trailers</div>';
+        filtered.forEach(t => {
+            container.innerHTML += `<button type="button" class="list-group-item list-group-item-action text-start" onclick="selectTrailer(${t.id}, '${t.trailer_number}', '${t.license_expiry || "N/A"}')">${t.trailer_number}</button>`;
+        });
+    }
+    function selectTrailer(id, number, license) {
+        document.getElementById('trailerId').value = id;
+        document.getElementById('trailerNumberDisplay').value = number;
+        
+        const licenseField = document.getElementById('trailerLicense');
+        licenseField.outerHTML = `<div id="trailerLicense" class="form-control bg-light d-flex align-items-center">${getExpiryBadgeHTML(license)}</div>`;
+        
+        bootstrap.Modal.getInstance(document.getElementById('trailerSearchModal'))?.hide();
+    }
+    function clearTrailer() { 
+        document.getElementById('trailerId').value = ''; 
+        document.getElementById('trailerNumberDisplay').value = ''; 
+        const licenseField = document.getElementById('trailerLicense');
+        licenseField.outerHTML = `<input type="text" id="trailerLicense" class="form-control bg-light" readonly>`;
+    }
+
+    function searchRoutes() {
+        let q = document.getElementById('routeSearchInput').value.toLowerCase();
+        let container = document.getElementById('routeResults');
+        let filtered = (window.currentClientRoutes || []).filter(r => 
+            (r.origin && r.origin.toLowerCase().includes(q)) || 
+            (r.destination && r.destination.toLowerCase().includes(q)) ||
+            (r.route_type_name && r.route_type_name.toLowerCase().includes(q))
+        );
+        container.innerHTML = filtered.length ? '' : '<div class="text-center p-3 text-muted">No matching routes</div>';
+        filtered.forEach(r => {
+            let safeRoute = JSON.stringify(r).replace(/"/g, '&quot;');
+            let totalTimeVal = r.total_time || r.estimated_hours || r.hours || 0;
+            let typeBadge = r.route_type_name ? ` (${r.route_type_name})` : '';
+            
+            container.innerHTML += `<button type="button" class="list-group-item list-group-item-action text-start" onclick='selectRoute(${safeRoute})'>${r.origin} ➔ ${r.destination}${typeBadge} (${r.distance_km || r.distance || 0} KM - ${totalTimeVal} Hrs)</button>`;
+        });
+    }
+
+    function selectRoute(r) {
+        document.getElementById('routeId').value = r.id;
+        let routeDisplayTitle = `${r.origin} to ${r.destination}`;
+        if (r.route_type_name) {
+            routeDisplayTitle += ` (${r.route_type_name})`;
+        }
+        document.getElementById('routeNameDisplay').value = routeDisplayTitle;
+        document.getElementById('routeOrigin').value = r.origin;
+        document.getElementById('routeDestination').value = r.destination;
+        document.getElementById('routeKm').value = (r.distance_km || r.distance || 0) + " KM";
+        
+        let totalTime = r.total_time || r.estimated_hours || r.hours || 0;
+        document.getElementById('routeHours').value = totalTime;
+
+        bootstrap.Modal.getInstance(document.getElementById('routeSearchModal'))?.hide();
+    }
+
+    function clearRoute() {
+        document.getElementById('routeId').value = '';
+        document.getElementById('routeNameDisplay').value = '';
+        document.getElementById('routeOrigin').value = '';
+        document.getElementById('routeDestination').value = '';
+        document.getElementById('routeKm').value = '';
+        document.getElementById('routeHours').value = '';
+    }
+
+    // دالة إنشاء الرحلة عبر AJAX والتوجيه المباشر لتذكرة الرحلة
+    function submitJourneyForm(event) {
+        event.preventDefault();
+        const form = document.getElementById('createJourneyForm');
+        const formData = new FormData(form);
+        const saveBtn = document.getElementById('saveBtn');
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Saving...`;
+
+        fetch('/journeys/create', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(async res => {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return res.json();
+            } else {
+                throw new Error("Invalid server response format");
+            }
+        })
+        .then(data => {
+            if (data.success) {
+                window.location.href = data.redirect_url;
+            } else {
+                alert('حدث خطأ أثناء إنشاء الرحلة: ' + (data.message || 'يرجى المحاولة لاحقاً'));
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('حدث خطأ غير متوقع، يرجى التحقق من البيانات المدخلة والمحاولة لاحقاً.');
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `<i class="fas fa-save me-2"></i> Save & Create Journey`;
+        });
+    }
+</script>
+</body>
+</html>

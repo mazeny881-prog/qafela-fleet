@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ar" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Journeys - QAFELA Fleet System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .sidebar-menu {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar h4 {
+            font-size: 1.1rem;
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1b263b;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        /* تنسيق الجدول وتفعيل إخفاء النص عند التصغير (Text Overflow) */
+        .table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        .table th, .table td {
+            position: relative;
+            text-align: center;
+            vertical-align: middle;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .table th {
+            user-select: none;
+        }
+        .resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+            z-index: 10;
+        }
+        .resizer:hover, .resizer.resizing {
+            background-color: #ff9f1c;
+        }
+    </style>
+</head>
+<body>
+
+   <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-signpost text-primary"></i> Journeys Management</h2>
+                <div>
+                    <a href="/journeys/new" class="btn btn-success"><i class="fas fa-plus"></i> New journey</a>
+                </div>
+            </div>
+
+            <!-- Search & Filters Bar -->
+            <div class="card card-stat mb-4">
+                <div class="card-body">
+                    <form method="get" action="/journeys/tickets" id="filterForm" class="row g-3 align-items-center">
+                        <input type="hidden" name="sort_by" value="{{ current_sort }}">
+                        <input type="hidden" name="order" value="{{ current_order }}">
+                        
+                        <input type="hidden" name="date_type" value="{{ date_type }}">
+                        <input type="hidden" name="date_from" value="{{ date_from }}">
+                        <input type="hidden" name="date_to" value="{{ date_to }}">
+
+                        <div class="col-md-3">
+                            <input type="text" name="q" id="searchInput" class="form-control" value="{{ search_query }}" placeholder="Search by Vehicle Plate Number (e.g., 5583)..." autocomplete="off">
+                        </div>
+                        <div class="col-md-2">
+                            <!-- فلتر الحالات مع دعم خيار Active & Planned & Off Duty -->
+                            <select name="status" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Statuses</option>
+                                <option value="Active_Planned" {% if current_status == 'Active_Planned' %}selected{% endif %}>Active & Planned</option>
+                                <option value="Active_Planned_OffDuty" {% if current_status == 'Active_Planned_OffDuty' %}selected{% endif %}>Active & Planned & Off Duty</option>
+                                <option value="Planned" {% if current_status == 'Planned' %}selected{% endif %}>Planned</option>
+                                <option value="Active" {% if current_status == 'Active' %}selected{% endif %}>Active</option>
+                                <option value="Ended" {% if current_status == 'Ended' %}selected{% endif %}>Ended</option>
+                                <option value="Off Duty" {% if current_status == 'Off Duty' %}selected{% endif %}>Off Duty</option>
+                                <option value="Cancelled" {% if current_status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="load_type_id" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Load Types</option>
+                                {% for lt in load_types_list %}
+                                <option value="{{ lt.id }}" {% if current_load_type_id|string == lt.id|string %}selected{% endif %}>{{ lt.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="grouped" class="form-select" onchange="this.form.submit()">
+                                <option value="1" {% if grouped == '1' %}selected{% endif %}>Group by Segment</option>
+                                <option value="0" {% if grouped == '0' %}selected{% endif %}>Unified Table</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="customFilterBtn" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
+                                <i class="fas fa-filter"></i> Filter 
+                                {% if date_type %}<span class="badge bg-danger ms-1">!</span>{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal النافذة المنبثقة للفلترة الزمنية -->
+            <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="get" action="/journeys/tickets">
+                            <input type="hidden" name="q" value="{{ search_query }}">
+                            <input type="hidden" name="status" value="{{ current_status }}">
+                            <input type="hidden" name="load_type_id" value="{{ current_load_type_id }}">
+                            <input type="hidden" name="grouped" value="{{ grouped }}">
+                            <input type="hidden" name="sort_by" value="{{ current_sort }}">
+                            <input type="hidden" name="order" value="{{ current_order }}">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="dateFilterModalLabel"><i class="fas fa-calendar-alt text-primary me-2"></i> Date Range Filter</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Select Date Field:</label>
+                                    <select name="date_type" class="form-select" required>
+                                        <option value="" disabled {% if not date_type %}selected{% endif %}>-- Choose field --</option>
+                                        <option value="departure" {% if date_type == 'departure' %}selected{% endif %}>Departure Time</option>
+                                        <option value="planned_arrival" {% if date_type == 'planned_arrival' %}selected{% endif %}>Planned Arrival</option>
+                                        <option value="actual_arrival" {% if date_type == 'actual_arrival' %}selected{% endif %}>Actual Arrival Time</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">From:</label>
+                                    <input type="datetime-local" name="date_from" class="form-control" value="{{ date_from }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">To:</label>
+                                    <input type="datetime-local" name="date_to" class="form-control" value="{{ date_to }}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="/journeys/tickets?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}" class="btn btn-outline-secondary">Reset Filters</a>
+                                <button type="submit" class="btn btn-primary">Apply Filter</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Journeys Display (Grouped or Unified) -->
+            {% macro render_table(journey_list) %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <!-- # Serial -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=serial&order={{ 'desc' if current_sort == 'serial' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Serial">
+                                    # Serial 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'serial' and current_order == 'asc' else ('-down' if current_sort == 'serial' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Vehicle -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=vehicle&order={{ 'desc' if current_sort == 'vehicle' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Vehicle">
+                                    Vehicle 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'vehicle' and current_order == 'asc' else ('-down' if current_sort == 'vehicle' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Route -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=route&order={{ 'desc' if current_sort == 'route' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Route">
+                                    Route 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'route' and current_order == 'asc' else ('-down' if current_sort == 'route' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Load Type -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=load_type&order={{ 'desc' if current_sort == 'load_type' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Load Type">
+                                    Load Type 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'load_type' and current_order == 'asc' else ('-down' if current_sort == 'load_type' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Status -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=status&order={{ 'desc' if current_sort == 'status' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Status">
+                                    Status 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'status' and current_order == 'asc' else ('-down' if current_sort == 'status' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+                            
+                            <!-- Departure Time -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=departure&order={{ 'desc' if current_sort == 'departure' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Departure Time">
+                                    Departure Time 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'departure' and current_order == 'asc' else ('-down' if current_sort == 'departure' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Planned Arrival -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=planned_arrival&order={{ 'desc' if current_sort == 'planned_arrival' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Planned Arrival">
+                                    Planned Arrival 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'planned_arrival' and current_order == 'asc' else ('-down' if current_sort == 'planned_arrival' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Actual Arrival Time -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=actual_arrival&order={{ 'desc' if current_sort == 'actual_arrival' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Actual Arrival Time">
+                                    Actual Arrival Time 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'actual_arrival' and current_order == 'asc' else ('-down' if current_sort == 'actual_arrival' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Delay / Early -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=delay&order={{ 'desc' if current_sort == 'delay' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Delay / Early">
+                                    Delay / Early 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'delay' and current_order == 'asc' else ('-down' if current_sort == 'delay' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Journey Remarks -->
+                            <th>
+                                <a href="?q={{ search_query }}&status={{ current_status }}&load_type_id={{ current_load_type_id }}&grouped={{ grouped }}&date_type={{ date_type }}&date_from={{ date_from }}&date_to={{ date_to }}&sort_by=remarks&order={{ 'desc' if current_sort == 'remarks' and current_order == 'asc' else 'asc' }}" class="text-white text-decoration-none d-block text-truncate" title="Journey Remarks">
+                                    Journey Remarks 
+                                    <i class="fas fa-sort{{ '-up' if current_sort == 'remarks' and current_order == 'asc' else ('-down' if current_sort == 'remarks' and current_order == 'desc' else '') }}"></i>
+                                </a>
+                            </th>
+
+                            <!-- Actions -->
+                            <th>
+                                <span class="text-white d-block text-truncate" title="Actions">
+                                    Actions <i class="fas fa-sort text-muted"></i>
+                                </span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for journey in journey_list %}
+                        <tr>
+                            <td title="{{ journey.serial_number if journey.serial_number else journey.serial }}"><strong>{{ journey.serial_number if journey.serial_number else journey.serial }}</strong></td>
+                            <td title="{{ journey.vehicle.plate_number if journey.vehicle else 'N/A' }}">{{ journey.vehicle.plate_number if journey.vehicle else 'N/A' }}</td>
+                            <td title="{{ journey.route.full_name if journey.route else 'N/A' }}">{{ journey.route.full_name if journey.route else 'N/A' }}</td>
+                            <td title="{{ journey.load_type.name if journey.load_type else 'N/A' }}"><span class="badge bg-info text-dark">{{ journey.load_type.name if journey.load_type else 'N/A' }}</span></td>
+                            <td title="{{ 'Off Duty' if journey.is_off_duty == 'Y' else journey.status }}">
+                                <span class="badge bg-{{ 'success' if journey.status == 'Active' else ('warning text-dark' if journey.status == 'Planned' else ('danger' if journey.status == 'Cancelled' else ('info text-dark' if journey.is_off_duty == 'Y' or journey.status == 'Off Duty' else 'secondary'))) }}">
+                                    {{ 'Off Duty' if journey.is_off_duty == 'Y' else journey.status }}
+                                </span>
+                            </td>
+                            <td title="{{ journey.manual_start_time.strftime('%Y-%m-%d %I:%M %p') if journey.manual_start_time else '-' }}"><small>{{ journey.manual_start_time.strftime('%Y-%m-%d %I:%M %p') if journey.manual_start_time else '-' }}</small></td>
+                            <td title="{{ journey.planned_end_time.strftime('%Y-%m-%d %I:%M %p') if journey.planned_end_time else '-' }}"><small>{{ journey.planned_end_time.strftime('%Y-%m-%d %I:%M %p') if journey.planned_end_time else '-' }}</small></td>
+                            <td title="{% if journey.is_off_duty == 'Y' and journey.manual_end_time %}{{ journey.manual_end_time.strftime('%Y-%m-%d %I:%M %p') }}{% elif journey.manual_arrived_time %}{{ journey.manual_arrived_time.strftime('%Y-%m-%d %I:%M %p') }}{% else %}-{% endif %}">
+                                <small>
+                                    {% if journey.is_off_duty == 'Y' and journey.manual_end_time %}
+                                        {{ journey.manual_end_time.strftime('%Y-%m-%d %I:%M %p') }}
+                                    {% elif journey.manual_arrived_time %}
+                                        {{ journey.manual_arrived_time.strftime('%Y-%m-%d %I:%M %p') }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td title="{{ journey.delayed_duration or '00:00' }}">
+                                <span class="fw-bold {% if journey.delayed_duration and '-' in journey.delayed_duration %}text-success{% elif journey.delayed_duration and journey.delayed_duration != '00:00' %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ journey.delayed_duration or '00:00' }}
+                                </span>
+                            </td>
+                            <td title="{{ journey.remarks or '-' }}">
+                                <span class="text-muted">
+                                    {{ journey.remarks or '-' }}
+                                </span>
+                            </td>
+                            <td>
+                                <button type="button" onclick="openJourneyTicket('{{ journey.id }}')" class="btn btn-sm btn-outline-primary text-truncate">
+                                    <i class="fas fa-ticket-alt"></i> View Ticket
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center text-muted py-4">No journeys found matching the criteria.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endmacro %}
+
+            {% if grouped == '1' and segmented_journeys %}
+                {% for segment_name, seg_journeys in segmented_journeys.items() %}
+                <div class="card card-stat mb-4">
+                    <div class="card-header bg-secondary text-white fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-route me-2"></i> Segment: {{ segment_name }}</span>
+                        <div>
+                            <a href="/journeys/segment-update/{{ segment_name }}" class="btn btn-sm btn-warning text-dark fw-bold me-2">
+                                <i class="fas fa-sync-alt"></i> Segment Update
+                            </a>
+                            <span class="badge bg-light text-dark">{{ seg_journeys|length }} journeys</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ render_table(seg_journeys) }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card card-stat mb-4">
+                    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-list me-2"></i> All Journeys (Unified Table)</span>
+                        <span class="badge bg-light text-dark">{{ journeys|length }} journeys</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {{ render_table(journeys) }}
+                    </div>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- تضمين سكريبت Bootstrap JavaScript للـ Modal -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // دالة تفعيل تغيير مساحة العرض مع الحفاظ على مرونة التقلص
+        document.addEventListener('DOMContentLoaded', function() {
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                const cols = table.querySelectorAll('th');
+                cols.forEach(col => {
+                    const resizer = document.createElement('div');
+                    resizer.classList.add('resizer');
+                    col.appendChild(resizer);
+
+                    let x = 0;
+                    let w = 0;
+
+                    resizer.addEventListener('mousedown', function(e) {
+                        x = e.clientX;
+                        w = col.offsetWidth;
+                        document.addEventListener('mousemove', mouseMoveHandler);
+                        document.addEventListener('mouseup', mouseUpHandler);
+                        resizer.classList.add('resizing');
+                    });
+
+                    function mouseMoveHandler(e) {
+                        const dx = e.clientX - x;
+                        const newWidth = Math.max(40, w + dx);
+                        col.style.width = `${newWidth}px`;
+                    }
+
+                    function mouseUpHandler() {
+                        document.removeEventListener('mousemove', mouseMoveHandler);
+                        document.removeEventListener('mouseup', mouseUpHandler);
+                        resizer.classList.remove('resizing');
+                    }
+                });
+            });
+        });
+
+        function openJourneyTicket(journeyId) {
+            fetch(`/journeys/ticket/${journeyId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async response => {
+                if (response.ok) {
+                    window.location.href = `/journeys/ticket/${journeyId}`;
+                } else {
+                    let errData = await response.json().catch(() => ({}));
+                    let lockerName = errData.locker || errData.detail || 'مستخدم آخر';
+                    
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'هذه التذكرة قيد الاستخدام',
+                        html: `<div style="direction: rtl; text-align: center;"><span class="text-danger fw-bold">${lockerName}</span></div>`,
+                        confirmButtonText: 'حسناً',
+                        confirmButtonColor: '#1f4e78'
+                    });
+                }
+            })
+            .catch(error => {
+                window.location.href = `/journeys/ticket/${journeyId}`;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('error') === 'locked') {
+                const lockerName = urlParams.get('locker') || 'مستخدم آخر';
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'هذه التذكرة قيد الاستخدام',
+                    html: `<div style="direction: rtl; text-align: center;"><span class="text-danger fw-bold">${lockerName}</span></div>`,
+                    confirmButtonText: 'حسناً',
+                    confirmButtonColor: '#1f4e78'
+                });
+
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            const searchInput = document.getElementById('searchInput');
+            const filterForm = document.getElementById('filterForm');
+            let timeout = null;
+
+            if (searchInput && filterForm) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(function() {
+                        filterForm.submit();
+                    }, 500); 
+                });
+            }
+        });
+    </script>
+</body>
+</html>

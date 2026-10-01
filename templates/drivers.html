@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drivers Management - QAFELA Fleet System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .sidebar-menu {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1b263b;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        .license-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .license-valid { background-color: #e8f5e9; color: #2e7d32; }
+        .license-warning { background-color: #fff8e1; color: #f57f17; }
+        .license-danger { background-color: #ffebee; color: #c62828; }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        th.sortable:hover {
+            background-color: #e9ecef;
+        }
+        .sort-icon {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h2 class="mb-4">Drivers Management</h2>
+
+        <!-- Filters & Unified Instant Search Bar -->
+        <div class="card stat-card bg-white p-3 mb-4">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">Transport Company</label>
+                    <select id="filter_company_id" class="form-select" onchange="onCompanyChange('filter', this.value); applyFilters();">
+                        <option value="">-- All Companies --</option>
+                        {% for comp in companies %}
+                        <option value="{{ comp.id }}">{{ comp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">Client</label>
+                    <select id="filter_client_id" class="form-select" disabled onchange="onClientChange('filter', this.value); applyFilters();">
+                        <option value="">-- Select Company First --</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}" data-company-id="{{ client.company_id }}">{{ client.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">Segment</label>
+                    <select id="filter_segment_id" class="form-select" disabled onchange="applyFilters();">
+                        <option value="">-- Select Client First --</option>
+                        {% for seg in segments %}
+                        <option value="{{ seg.id }}" data-client-id="{{ seg.client_id }}">{{ seg.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">Search Driver</label>
+                    <div class="input-group">
+                        <input type="text" id="unifiedSearch" class="form-control" placeholder="Search by name, phone, code, username...">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add New Driver Form -->
+        <div class="card stat-card bg-white p-4 mb-4">
+            <h5 class="mb-3">Add New Driver</h5>
+            <form action="/drivers/add" method="POST">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="Enter driver name" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="Enter phone" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">License Expiry</label>
+                        <input type="date" name="license_expiry" class="form-control" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <!-- App Credentials Fields -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label text-primary fw-bold">App Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="Username for App">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label text-primary fw-bold">App Password</label>
+                        <input type="text" name="password" class="form-control" placeholder="Password for App">
+                    </div>
+                    <div class="col-md-6 mb-3"></div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Transport Company <span class="text-danger">*</span></label>
+                        <select name="company_id" id="add_company_id" class="form-select" required onchange="onCompanyChange('add', this.value)">
+                            <option value="">-- Select Company --</option>
+                            {% for comp in companies %}
+                            <option value="{{ comp.id }}">{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Client</label>
+                        <select name="client_id" id="add_client_id" class="form-select" disabled onchange="onClientChange('add', this.value)">
+                            <option value="">-- Select Company First --</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}" data-company-id="{{ client.company_id }}">{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Segment</label>
+                        <select name="segment_id" id="add_segment_id" class="form-select" disabled>
+                            <option value="">-- Select Client First --</option>
+                            {% for seg in segments %}
+                            <option value="{{ seg.id }}" data-client-id="{{ seg.client_id }}">{{ seg.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Save Driver</button>
+            </form>
+        </div>
+
+        <!-- Drivers Table -->
+        <div class="card stat-card bg-white p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="driversTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" onclick="sortTableByCode(0)">Code <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>App Account</th>
+                            <th>Company / Client / Segment</th>
+                            <th class="sortable" onclick="sortTableByExpiry(5)">License Expiry <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                            <th class="sortable" onclick="sortTableByStatus(6)">Status <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in drivers %}
+                        <tr data-id="{{ d.id }}"
+                            data-code="{{ d.code }}"
+                            data-name="{{ d.name }}"
+                            data-phone="{{ d.phone }}"
+                            data-username="{{ d.username or '' }}"
+                            data-password="{{ d.password or '' }}"
+                            data-expiry="{{ d.license_expiry }}"
+                            data-status="{{ d.status }}"
+                            data-company-id="{{ d.company_id or '' }}" 
+                            data-client-id="{{ d.client_id or '' }}" 
+                            data-segment-id="{{ d.segment_id or '' }}">
+                            <td data-code="{{ d.code }}">{{ d.code }}</td>
+                            <td>{{ d.name }}</td>
+                            <td>{{ d.phone }}</td>
+                            <td>
+                                {% if d.username %}
+                                    <span class="badge bg-info text-dark" title="Username: {{ d.username }}">
+                                        <i class="bi bi-person-check"></i> {{ d.username }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted small">No Account</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted company-client-segment-text">
+                                    {{ d.company.name if d.company else '-' }} / 
+                                    {{ d.client.name if d.client else '-' }} / 
+                                    {{ d.segment.name if d.segment else '-' }}
+                                </small>
+                            </td>
+                            <td data-date="{{ d.license_expiry }}">
+                                {{ d.license_expiry }}
+                            </td>
+                            <td data-status="{{ d.status }}">
+                                {% if d.status == 'Active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="openEditModalFromRow(this)">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </button>
+                                <form action="/drivers/delete/{{ d.id }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this driver?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Single Modal Edit Driver -->
+    <div class="modal fade" id="editDriverModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="editDriverForm" method="POST">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editModalTitle">Edit Driver</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" name="name" id="edit_name" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" name="phone" id="edit_phone" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">License Expiry</label>
+                                <input type="date" name="license_expiry" id="edit_license_expiry" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" id="edit_status" class="form-select">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                            
+                            <!-- App Credentials Edit Fields (Password visible) -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-primary fw-bold">App Username</label>
+                                <input type="text" name="username" id="edit_username" class="form-control" placeholder="Username for App">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-primary fw-bold">App Password (Visible for Retrieval)</label>
+                                <input type="text" name="password" id="edit_password" class="form-control" placeholder="Password for App">
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Transport Company <span class="text-danger">*</span></label>
+                                <select name="company_id" id="edit_company_id" class="form-select" required onchange="onCompanyChange('edit', this.value)">
+                                    <option value="">-- Select Company --</option>
+                                    {% for comp in companies %}
+                                    <option value="{{ comp.id }}">{{ comp.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Client</label>
+                                <select name="client_id" id="edit_client_id" class="form-select" disabled onchange="onClientChange('edit', this.value)">
+                                    <option value="">-- Select Company First --</option>
+                                    {% for client in clients %}
+                                    <option value="{{ client.id }}" data-company-id="{{ client.company_id }}">{{ client.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Segment</label>
+                                <select name="segment_id" id="edit_segment_id" class="form-select" disabled>
+                                    <option value="">-- Select Client First --</option>
+                                    {% for seg in segments %}
+                                    <option value="{{ seg.id }}" data-client-id="{{ seg.client_id }}">{{ seg.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function onCompanyChange(prefix, companyId) {
+            const clientSelect = document.getElementById(prefix + '_client_id');
+            const segmentSelect = document.getElementById(prefix + '_segment_id');
+            if (!clientSelect || !segmentSelect) return;
+
+            clientSelect.value = "";
+            segmentSelect.value = "";
+            segmentSelect.disabled = true;
+            
+            Array.from(segmentSelect.options).forEach(opt => {
+                if (opt.value !== "") opt.style.display = "none";
+            });
+            segmentSelect.options[0].text = "-- Select Client First --";
+
+            if (!companyId) {
+                clientSelect.disabled = true;
+                clientSelect.options[0].text = "-- Select Company First --";
+                Array.from(clientSelect.options).forEach(opt => {
+                    if (opt.value !== "") opt.style.display = "none";
+                });
+                return;
+            }
+
+            clientSelect.disabled = false;
+            clientSelect.options[0].text = "-- Select Client --";
+
+            Array.from(clientSelect.options).forEach(opt => {
+                if (opt.value === "") return;
+                const compId = opt.getAttribute('data-company-id');
+                if (compId === companyId) {
+                    opt.style.display = "";
+                } else {
+                    opt.style.display = "none";
+                }
+            });
+        }
+
+        function onClientChange(prefix, clientId) {
+            const segmentSelect = document.getElementById(prefix + '_segment_id');
+            if (!segmentSelect) return;
+
+            segmentSelect.value = "";
+
+            if (!clientId) {
+                segmentSelect.disabled = true;
+                segmentSelect.options[0].text = "-- Select Client First --";
+                Array.from(segmentSelect.options).forEach(opt => {
+                    if (opt.value !== "") opt.style.display = "none";
+                });
+                return;
+            }
+
+            segmentSelect.disabled = false;
+            segmentSelect.options[0].text = "-- Select Segment --";
+
+            Array.from(segmentSelect.options).forEach(opt => {
+                if (opt.value === "") return;
+                const clId = opt.getAttribute('data-client-id');
+                if (clId === clientId) {
+                    opt.style.display = "";
+                } else {
+                    opt.style.display = "none";
+                }
+            });
+        }
+
+        function openEditModalFromRow(button) {
+            const row = button.closest('tr');
+            
+            const id = row.getAttribute('data-id');
+            const code = row.getAttribute('data-code');
+            const name = row.getAttribute('data-name');
+            const phone = row.getAttribute('data-phone');
+            const username = row.getAttribute('data-username');
+            const password = row.getAttribute('data-password'); // جلب كلمة المرور المخزنة
+            const expiry = row.getAttribute('data-expiry');
+            const status = row.getAttribute('data-status');
+            const companyId = row.getAttribute('data-company-id');
+            const clientId = row.getAttribute('data-client-id');
+            const segmentId = row.getAttribute('data-segment-id');
+
+            document.getElementById('editDriverForm').action = '/drivers/update/' + id;
+            document.getElementById('editModalTitle').innerText = 'Edit Driver: ' + code;
+
+            document.getElementById('edit_name').value = name;
+            document.getElementById('edit_phone').value = phone;
+            document.getElementById('edit_username').value = username;
+            document.getElementById('edit_password').value = password; // عرض كلمة المرور بوضوح في الحقل
+            document.getElementById('edit_license_expiry').value = expiry;
+            document.getElementById('edit_status').value = status;
+
+            const companySelect = document.getElementById('edit_company_id');
+            companySelect.value = companyId;
+            onCompanyChange('edit', companyId);
+
+            if (companyId && clientId) {
+                const clientSelect = document.getElementById('edit_client_id');
+                clientSelect.value = clientId;
+                onClientChange('edit', clientId);
+
+                if (clientId && segmentId) {
+                    const segmentSelect = document.getElementById('edit_segment_id');
+                    segmentSelect.value = segmentId;
+                }
+            }
+
+            const modalElement = new bootstrap.Modal(document.getElementById('editDriverModal'));
+            modalElement.show();
+        }
+
+        function applyFilters() {
+            const searchQuery = document.getElementById('unifiedSearch').value.toLowerCase();
+            const selectedCompany = document.getElementById('filter_company_id').value;
+            const selectedClient = document.getElementById('filter_client_id').value;
+            const selectedSegment = document.getElementById('filter_segment_id').value;
+
+            const rows = document.querySelectorAll('#driversTable tbody tr');
+
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                const rowComp = row.getAttribute('data-company-id');
+                const rowClient = row.getAttribute('data-client-id');
+                const rowSeg = row.getAttribute('data-segment-id');
+
+                let matchesSearch = rowText.includes(searchQuery);
+                let matchesCompany = !selectedCompany || rowComp === selectedCompany;
+                let matchesClient = !selectedClient || rowClient === selectedClient;
+                let matchesSegment = !selectedSegment || rowSeg === selectedSegment;
+
+                if (matchesSearch && matchesCompany && matchesClient && matchesSegment) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('unifiedSearch').addEventListener('keyup', applyFilters);
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const today = new Date("2026-09-01");
+            const rows = document.querySelectorAll("#driversTable tbody tr");
+
+            rows.forEach(row => {
+                const expiryCell = row.querySelector("td[data-date]");
+                if (expiryCell) {
+                    const dateStr = expiryCell.getAttribute("data-date");
+                    if (!dateStr) return;
+                    const expiryDate = new Date(dateStr);
+                    const diffTime = expiryDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    let badgeClass = "license-valid";
+                    let iconClass = "bi-check-circle";
+
+                    if (diffDays <= 30) {
+                        badgeClass = "license-danger";
+                        iconClass = "bi-exclamation-circle"; 
+                    } else if (diffDays <= 60) {
+                        badgeClass = "license-warning";
+                        iconClass = "bi-clock-history"; 
+                    }
+
+                    expiryCell.innerHTML = `<span class="license-badge ${badgeClass}"><i class="bi ${iconClass} me-1"></i> ${dateStr}</span>`;
+                }
+            });
+        });
+
+        let sortCodeDirection = false;
+        function sortTableByCode(colIndex) {
+            const table = document.getElementById("driversTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort((a, b) => {
+                const aVal = a.querySelectorAll("td")[colIndex].getAttribute("data-code") || "";
+                const bVal = b.querySelectorAll("td")[colIndex].getAttribute("data-code") || "";
+                return sortCodeDirection ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+            });
+
+            sortCodeDirection = !sortCodeDirection;
+            rows.forEach(row => tbody.appendChild(row));
+            updateSortIcons(0, sortCodeDirection);
+        }
+
+        let sortExpiryDirection = false;
+        function sortTableByExpiry(colIndex) {
+            const table = document.getElementById("driversTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort((a, b) => {
+                const aDate = new Date(a.querySelectorAll("td")[colIndex].getAttribute("data-date") || "");
+                const bDate = new Date(b.querySelectorAll("td")[colIndex].getAttribute("data-date") || "");
+                return sortExpiryDirection ? aDate - bDate : bDate - aDate;
+            });
+
+            sortExpiryDirection = !sortExpiryDirection;
+            rows.forEach(row => tbody.appendChild(row));
+            updateSortIcons(5, sortExpiryDirection);
+        }
+
+        let sortStatusDirection = false;
+        function sortTableByStatus(colIndex) {
+            const table = document.getElementById("driversTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+
+            rows.sort((a, b) => {
+                const aStatus = a.querySelectorAll("td")[colIndex].getAttribute("data-status") || "";
+                const bStatus = b.querySelectorAll("td")[colIndex].getAttribute("data-status") || "";
+                return sortStatusDirection ? aStatus.localeCompare(bStatus) : bStatus.localeCompare(aStatus);
+            });
+
+            sortStatusDirection = !sortStatusDirection;
+            rows.forEach(row => tbody.appendChild(row));
+            updateSortIcons(6, sortStatusDirection);
+        }
+
+        function updateSortIcons(columnIndex, isAscending) {
+            const headers = document.querySelectorAll("#driversTable th.sortable");
+            headers.forEach((th) => {
+                const icon = th.querySelector(".sort-icon");
+                if (!icon) return;
+                const onclickAttr = th.getAttribute("onclick") || "";
+                if (onclickAttr.includes(`(${columnIndex})`)) {
+                    icon.className = isAscending ? "bi bi-sort-up text-primary sort-icon" : "bi bi-sort-down text-primary sort-icon";
+                } else {
+                    icon.className = "bi bi-arrow-down-up sort-icon";
+                }
+            });
+        }
+    </script>
+</body>
+</html>

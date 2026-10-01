@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Performance League - QAFELA Fleet System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+   <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            background-color: #0d1b2a;
+            padding-top: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .sidebar-menu {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .sidebar-brand-container {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 1px solid #1b263b;
+        }
+        .sidebar a {
+            color: #adb5bd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .sidebar a i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: white;
+            background-color: #1b263b;
+        }
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            transition: transform 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-menu">
+            <!-- شعار النظام المدمج -->
+            <div class="sidebar-brand-container">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                        <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                        <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                        <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                        <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    </svg>
+                    <span class="fw-bold text-white fs-5" style="letter-spacing: 1px;">QAFELA</span>
+                </div>
+            </div>
+
+            <a href="/" class="{% if request.path == '/' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+            <a href="/journeys/new" class="{% if request.path == '/journeys/new' %}active{% endif %}"><i class="bi bi-plus-circle me-2"></i> New Journey</a>
+            <a href="/journeys/tickets" class="{% if request.path.startswith('/journeys/ticket') or request.path == '/journeys/tickets' %}active{% endif %}"><i class="bi bi-signpost-split me-2"></i> Journeys</a>
+            <a href="/fleet/live-map" class="{% if request.path == '/fleet/live-map' %}active{% endif %}"><i class="bi bi-broadcast me-2"></i> Fleet Live Map</a>
+            <a href="/maintenance-logs" class="{% if request.path == '/maintenance-logs' %}active{% endif %}"><i class="bi bi-tools me-2"></i> Maintenance Logs</a>
+            <a href="/journeys/off-duty-calendar" class="{% if request.path == '/journeys/off-duty-calendar' %}active{% endif %}"><i class="bi bi-calendar-x me-2"></i> Off Duty Calendar</a>
+            <hr class="border-secondary my-2">
+            <a href="/vehicles" class="{% if request.path == '/vehicles' %}active{% endif %}"><i class="bi bi-truck me-2"></i> Vehicles</a>
+            <a href="/trailers" class="{% if request.path == '/trailers' %}active{% endif %}"><i class="bi bi-box me-2"></i> Trailers</a>
+            <a href="/drivers" class="{% if request.path == '/drivers' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Drivers</a>
+            <a href="/driver-leaves" class="{% if request.path == '/driver-leaves' %}active{% endif %}"><i class="bi bi-calendar-minus me-2"></i> Driver Leave</a>
+            <a href="/fleet-overview" class="{% if request.path == '/fleet-overview' %}active{% endif %}"><i class="bi bi-grid-3x3-gap me-2"></i> Fleet Overview</a>
+            <a href="/routes" class="{% if request.path == '/routes' %}active{% endif %}"><i class="bi bi-map me-2"></i> Routes</a>
+            <a href="/locations" class="{% if request.path == '/locations' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Locations</a>
+            <a href="/load-types" class="{% if request.path == '/load-types' %}active{% endif %}"><i class="bi bi-boxes me-2"></i> Load Types</a>
+            <a href="/settings" class="{% if request.path == '/settings' %}active{% endif %}"><i class="bi bi-gear me-2"></i> Settings</a>
+            <hr class="border-secondary my-2">
+            <a href="/drivers/league" class="{% if request.path == '/drivers/league' %}active{% endif %}"><i class="bi bi-trophy me-2"></i> Driver League</a>
+            <a href="/employees/league" class="{% if request.path == '/employees/league' %}active{% endif %}"><i class="bi bi-people me-2"></i> Employee League</a>
+            <hr class="border-secondary my-2">
+            <a href="/app-management" class="{% if request.path.startswith('/app-management') or request.path == '/companies' or request.path == '/users' %}active{% endif %}"><i class="bi bi-shield-lock me-2"></i> App Management</a>
+            <a href="/about" class="{% if request.path == '/about' %}active{% endif %}"><i class="bi bi-info-circle me-2"></i> About</a>
+        </div>
+        
+        <div class="p-3 border-top border-secondary">
+            <a href="/logout" class="text-danger text-decoration-none d-flex align-items-center p-2 rounded" style="transition: 0.2s;">
+                <i class="bi bi-box-arrow-right me-2 fs-5"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container-fluid">
+            
+            <h2 class="mb-4">Operations Performance League (Employees)</h2>
+
+            <!-- Filter Card -->
+            <div class="card stat-card bg-white p-4 mb-4">
+                <form id="filterForm" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">From Date:</label>
+                        <input type="date" name="from_date" value="{{ from_date }}" class="form-control auto-submit">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">To Date:</label>
+                        <input type="date" name="to_date" value="{{ to_date }}" class="form-control auto-submit">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Company:</label>
+                        <select name="company_id" id="companySelect" class="form-select">
+                            <option value="">All Companies</option>
+                            {% for comp in companies %}
+                            <option value="{{ comp.id }}" {% if company_id|string == comp.id|string %}selected{% endif %}>{{ comp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Client Company: مفعل ومتاح دائماً لضمان ظهور العملاء -->
+                    <div class="col-md-3" id="clientWrapper">
+                        <label class="form-label fw-bold">Client Company:</label>
+                        <select name="client_company_id" id="clientSelect" class="form-select auto-submit">
+                            <option value="">All Clients</option>
+                            {% for client in clients %}
+                            <option value="{{ client.id }}" {% if client_company_id|string == client.id|string %}selected{% endif %}>{{ client.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold">Employee Name:</label>
+                        <input type="text" id="employeeNameInput" name="employee_name" value="{{ employee_name }}" placeholder="Search by employee name..." class="form-control" autocomplete="off">
+                    </div>
+                </form>
+            </div>
+
+            <!-- League Table Card -->
+            <div class="card stat-card bg-white">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Rank</th>
+                                    <th class="text-start">Employee Details</th>
+                                    <th>Company / Client</th>
+                                    <th>First Update</th>
+                                    <th>Last Update</th>
+                                    <th>Handled Journeys</th>
+                                    <th>Follow-ups</th>
+                                    <th>Avg. Response</th>
+                                    <th class="pe-4">Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for emp in users_performance %}
+                                <tr>
+                                    <td class="ps-4 fw-bold fs-5">
+                                        {% if emp.rank == 1 %} 🥇
+                                        {% elif emp.rank == 2 %} 🥈
+                                        {% elif emp.rank == 3 %} 🥉
+                                        {% else %} {{ emp.rank }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-start">
+                                        <div class="fw-bold">{{ emp.name }}</div>
+                                        <small class="text-muted">{{ emp.email }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">C: {{ emp.company_id }}</span>
+                                        <span class="badge bg-light text-dark border">Cl: {{ emp.client_company_id }}</span>
+                                    </td>
+                                    <td><small class="text-muted">{{ emp.first_journey }}</small></td>
+                                    <td><small class="text-muted">{{ emp.last_journey }}</small></td>
+                                    <td><span class="badge bg-info text-dark">{{ emp.handled_journeys }}</span></td>
+                                    <td><span class="badge bg-secondary">{{ emp.follow_ups }}</span></td>
+                                    <td><span class="badge bg-dark">{{ emp.avg_response }}</span></td>
+                                    <td class="pe-4 fw-bold fs-5 text-primary">
+                                        {{ emp.score }} pts
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-4 text-muted">No employees found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const companySelect = document.getElementById('companySelect');
+        const clientSelect = document.getElementById('clientSelect');
+
+        companySelect.addEventListener('change', () => {
+            if (!companySelect.value) {
+                if (clientSelect) clientSelect.value = '';
+            }
+            document.getElementById('filterForm').submit();
+        });
+
+        document.querySelectorAll('.auto-submit').forEach(element => {
+            if (element.id !== 'companySelect') {
+                element.addEventListener('change', () => {
+                    document.getElementById('filterForm').submit();
+                });
+            }
+        });
+
+        let timeout = null;
+        const employeeInput = document.getElementById('employeeNameInput');
+        
+        employeeInput.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                document.getElementById('filterForm').submit();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تحديث رحلات: {{ segment_name }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            background-color: #f4f7f6; 
+            font-family: Tahoma, sans-serif; 
+        }
+        .main-container {
+            max-width: 850px;
+            margin: 30px auto;
+        }
+        .brand-center-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .brand-badge-clean {
+            display: inline-flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            padding: 8px 20px;
+            border-radius: 50rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+        }
+        .header-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            border-top: 4px solid #0d1b2a;
+        }
+        .journey-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-right: 5px solid #198754;
+        }
+        .journey-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+        }
+        .info-item {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .comment-box {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 12px;
+            font-size: 14px;
+            color: #333;
+            border: 1px solid #eee;
+            border-right: 4px solid #0d6efd;
+        }
+    </style>
+</head>
+<body class="p-3">
+
+    <div class="container main-container">
+        
+        <!-- الشعار في المنتصف -->
+        <div class="brand-center-header">
+            <div class="brand-badge-clean">
+                <span class="fw-bold text-dark ms-2" style="letter-spacing: 1.5px; font-size: 1.1rem;">QAFELA</span>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 3H16V16H1V3Z" fill="#1b263b" stroke="#ff9f1c" stroke-width="2"/>
+                    <path d="M16 8H20L23 11V16H16V8Z" fill="#ff9f1c"/>
+                    <circle cx="5.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                    <circle cx="18.5" cy="16.5" r="2.5" fill="#0d1b2a" stroke="#ffffff" stroke-width="1.5"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- رأس الصفحة والأزرار -->
+        <div class="header-card d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <a href="/journeys/tickets" class="btn btn-outline-secondary btn-sm px-3">
+                <i class="fas fa-arrow-right ms-1"></i> العودة للرحلات
+            </a>
+            <h4 class="text-primary fw-bold m-0 text-center">
+                <i class="fas fa-layer-group ms-2"></i> {{ segment_name }}
+            </h4>
+            <button class="btn btn-success btn-sm px-3 shadow-sm" onclick="copyForWhatsApp()">
+                <i class="fab fa-whatsapp ms-1"></i> نسخ للواتساب
+            </button>
+        </div>
+
+        <!-- عنصر مخفي يحتوي على النص المراد نسخه للواتساب بدون سيريال ومع تعديل الكلمة -->
+        <div id="whatsappTextContent" style="display:none;">تحديث: {{ segment_name }}
+
+{% for journey in journeys %}
+رقم السيارة: {{ journey.vehicle.plate_number if journey.vehicle else 'بدون لوحة' }}{% if journey.trailer %} - مقطورة: {{ journey.trailer.trailer_number }}{% endif %}
+السائق: {{ journey.driver.name if journey.driver else '-' }}
+{% if journey.latest_location %}الموقع: {{ journey.latest_location }}
+{% endif %}الحالة: {{ journey.latest_comment if journey.latest_comment else '-' }}
+
+------------------------
+{% endfor %}</div>
+
+        <!-- عرض الكروت منفصلة لكل رحلة -->
+        <div class="row">
+            {% for journey in journeys %}
+            <div class="col-12">
+                <div class="journey-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <div class="fw-bold text-success fs-6">
+                            <i class="fas fa-truck ms-1"></i> 
+                            {{ journey.vehicle.plate_number if journey.vehicle else 'بدون لوحة' }} 
+                            {% if journey.trailer %} 
+                                <span class="text-secondary fw-normal">(- مقطورة: {{ journey.trailer.trailer_number }})</span> 
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 info-item text-muted">
+                            <i class="fas fa-user-tie ms-1 text-secondary"></i> اسم السائق: 
+                            <span class="text-dark fw-bold">{{ journey.driver.name if journey.driver else '-' }}</span>
+                        </div>
+
+                        {% if journey.latest_location %}
+                        <div class="col-md-6 info-item text-muted">
+                            <i class="fas fa-map-marker-alt ms-1 text-danger"></i> الموقع الحالي: 
+                            <span class="text-dark fw-bold">{{ journey.latest_location }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="comment-box">
+                        <div class="d-flex align-items-center mb-1">
+                            <i class="fas fa-comment-dots text-primary ms-1"></i> 
+                            <strong class="text-primary">الحالة والتعليق:</strong>
+                        </div>
+                        <div class="text-dark px-3 py-1">{{ journey.latest_comment if journey.latest_comment else 'لا يوجد تعليق حالياً' }}</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center text-muted py-5 bg-white rounded shadow-sm border">
+                <i class="fas fa-info-circle fa-2x mb-2 text-secondary"></i>
+                <p class="m-0">لا توجد رحلات مسجلة لهذا القسم.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function copyForWhatsApp() {
+            const text = document.getElementById('whatsappTextContent').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('تم نسخ التحديث بنجاح للواتساب!');
+            }).catch(err => {
+                console.error('فشل النسخ:', err);
+            });
+        }
+    </script>
+</body>
+</html>
